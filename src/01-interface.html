@@ -1,0 +1,244 @@
+<title>A Ilusão</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=VT323&display=swap">
+<style>
+/* Layout: palco 16:9 centrado numa tela escura; a interface em pixel flutua sobre o canvas.
+   Tema único e escuro por escolha (o jogo começa no fundo de uma caverna). */
+:root{
+  --void:#0b0710;
+  --panel:rgba(12,8,15,.9);
+  --rock-line:#5a4148;
+  --ember:#f2a33a;
+  --ember-deep:#a8461a;
+  --bone:#efe4cf;
+  --bone-dim:#a99c8c;
+  --danger:#e0533a;
+  --teal:#7fd4c8;
+  --f-display:"Pixelify Sans","Courier New",monospace;
+  --f-text:"VT323","Courier New",monospace;
+  --touch-h:0px;
+  color-scheme:dark;
+}
+@media (pointer:coarse){ :root{ --touch-h:104px; } }
+[hidden]{display:none!important;}
+html,body{height:100%;}
+body{background:var(--void);color:var(--bone);font-family:var(--f-text);overflow:hidden;-webkit-tap-highlight-color:transparent;}
+#app{height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));}
+#stage{position:relative;width:min(100%, calc((100dvh - 20px - var(--touch-h)) * 16 / 9));aspect-ratio:16/9;max-width:100%;
+  container-type:inline-size;background:#000;outline:none;user-select:none;-webkit-user-select:none;overflow:hidden;
+  box-shadow:0 0 0 2px #1b131f,0 0 0 4px #000,0 24px 70px rgba(0,0,0,.65);}
+#game{display:block;width:100%;height:100%;image-rendering:crisp-edges;image-rendering:pixelated;cursor:pointer;}
+
+/* ---------- peças de interface ---------- */
+.panel{background:var(--panel);border:2px solid var(--rock-line);box-shadow:inset 0 0 0 2px #120c14,0 0 0 2px #000;}
+kbd{display:inline-block;font-family:var(--f-display);font-weight:600;font-size:.8em;line-height:1.2;padding:.05em .4em;margin:0 .1em;
+  background:var(--bone);color:#1c1218;border-bottom:3px solid #8f7f6e;border-radius:2px;vertical-align:.08em;white-space:nowrap;}
+
+#hud{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;
+  padding:1.2cqw 1.6cqw;pointer-events:none;font-size:clamp(12px,1.9cqw,21px);}
+.hud-left{display:grid;gap:.2em;justify-items:start;min-width:0;}
+#hud-scene{color:var(--bone-dim);font-size:.85em;letter-spacing:.05em;text-shadow:1px 1px 0 #000;}
+#hud-goal{display:inline-flex;gap:.5em;align-items:baseline;max-width:62cqw;padding:.1em .6em .2em;background:rgba(12,8,15,.78);border-left:3px solid var(--ember);line-height:1.05;}
+#hud-goal b{font-family:var(--f-display);font-weight:600;font-size:.68em;letter-spacing:.16em;text-transform:uppercase;color:var(--ember);flex:none;}
+#hud-goal.flash{animation:goal 1.2s steps(8);}
+@keyframes goal{0%,35%{background:rgba(242,163,58,.5)}100%{background:rgba(12,8,15,.78)}}
+.hud-right{display:flex;gap:.8em;align-items:center;margin-left:auto;}
+#hud-cycle{color:var(--ember);text-shadow:1px 1px 0 #000;}
+#hud-deaths{color:var(--bone-dim);text-shadow:1px 1px 0 #000;}
+#mute{pointer-events:auto;font:inherit;color:var(--bone);background:rgba(12,8,15,.75);border:2px solid var(--rock-line);padding:0 .5em;cursor:pointer;}
+#mute:focus-visible,#start:focus-visible,#touch button:focus-visible,.choice:focus-visible{outline:2px solid var(--ember);outline-offset:2px;}
+
+/* caixa de diálogo com retrato */
+#dialog{position:absolute;left:3%;right:3%;top:15%;display:grid;grid-template-columns:auto minmax(0,1fr);gap:1.6cqw;align-items:start;
+  padding:1.2cqw 1.6cqw 1.5cqw 1.2cqw;font-size:clamp(14px,2.6cqw,28px);line-height:1.1;
+  opacity:0;transform:translateY(-8px);visibility:hidden;transition:opacity .2s steps(4),transform .2s steps(4),visibility 0s linear .2s;}
+#dialog.open{opacity:1;transform:none;visibility:visible;transition:opacity .2s steps(4),transform .2s steps(4),visibility 0s;}
+.d-face{width:clamp(48px,10cqw,110px);aspect-ratio:1;background:#120c14;border:2px solid var(--rock-line);box-shadow:inset 0 0 0 2px #000,0 0 0 2px #000;}
+.d-face.talk{animation:talk .3s steps(2) infinite;}
+@keyframes talk{50%{transform:translateY(-2px)}}
+#portrait{display:block;width:100%;height:100%;image-rendering:crisp-edges;image-rendering:pixelated;}
+.d-body{min-width:0;padding-top:.1em;}
+#dialog-who{display:block;font-family:var(--f-display);font-size:.6em;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ember);margin-bottom:.25em;}
+#dialog-text{margin:0;max-width:62ch;min-height:2.2em;}
+#dialog-next{position:absolute;right:1.4cqw;bottom:.8cqw;color:var(--ember);font-size:.75em;animation:bob .8s steps(2) infinite;}
+@keyframes bob{50%{transform:translateY(3px)}}
+#dialog-choices{display:flex;gap:.8em;flex-wrap:wrap;margin-top:.5em;}
+.choice{font:inherit;font-size:.9em;color:var(--bone);background:#1d1520;border:2px solid var(--rock-line);padding:.05em .7em .15em .35em;cursor:pointer;display:inline-flex;gap:.45em;align-items:center;}
+.choice.sel{background:var(--ember);color:#1c1218;border-color:#ffd38a;}
+
+#prompt{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;font-size:clamp(13px,2.15cqw,22px);padding:.2em .6em .3em;pointer-events:none;}
+#prompt::after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-5px;border:5px solid transparent;border-top-color:var(--rock-line);}
+
+#card{position:absolute;left:6%;right:6%;top:38%;text-align:center;pointer-events:none;}
+#card.show{animation:card 3.4s steps(18) forwards;}
+@keyframes card{0%{opacity:0;transform:translateY(6px)}12%{opacity:1;transform:none}78%{opacity:1}100%{opacity:0}}
+#card-eyebrow{display:block;font-family:var(--f-display);font-size:clamp(11px,1.8cqw,18px);letter-spacing:.3em;text-transform:uppercase;color:var(--ember);text-shadow:2px 2px 0 #000;}
+#card-title{margin:.1em 0 0;font-family:var(--f-display);font-weight:700;font-size:clamp(20px,5cqw,52px);line-height:1;color:var(--bone);text-shadow:3px 3px 0 #000,6px 6px 0 rgba(0,0,0,.45);text-wrap:balance;}
+
+#toast{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);max-width:86%;text-align:center;font-size:clamp(13px,2.2cqw,23px);padding:.25em .8em .35em;pointer-events:none;}
+#toast.show{animation:toast var(--dur,3.5s) linear forwards;}
+@keyframes toast{0%{opacity:0}8%{opacity:1}85%{opacity:1}100%{opacity:0}}
+
+#qte{position:absolute;left:50%;top:15%;transform:translateX(-50%);width:min(64%,560px);padding:1.2cqw 1.8cqw 1.4cqw;font-size:clamp(13px,2.3cqw,24px);}
+.qte-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4em;}
+#qte-label{font-family:var(--f-display);font-weight:600;letter-spacing:.06em;}
+.pips{display:flex;gap:6px;}
+.pips i{display:block;width:1.6cqw;height:1.6cqw;min-width:9px;min-height:9px;background:#2a1f2a;border:2px solid var(--rock-line);}
+.pips i.on{background:var(--ember);border-color:#ffd38a;}
+.qte-bar{position:relative;height:clamp(14px,2.6cqw,26px);background:#1b131c;border:2px solid #000;box-shadow:inset 0 0 0 2px #3a2c36;overflow:hidden;}
+#qte-zone{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(90deg,#f2a33a 0 4px,#d9862a 4px 8px);box-shadow:inset 0 0 0 2px #ffd38a;}
+#qte-cursor{position:absolute;top:-2px;bottom:-2px;width:6px;margin-left:-3px;background:var(--bone);box-shadow:0 0 0 2px #000;}
+.qte-bar.hit{box-shadow:inset 0 0 0 2px #ffd38a;}
+.qte-bar.miss{box-shadow:inset 0 0 0 2px var(--danger);}
+#qte-hint{margin-top:.4em;color:var(--bone-dim);}
+#qte-hint.hit{color:var(--ember);} #qte-hint.miss{color:var(--danger);}
+
+#meter{position:absolute;left:50%;bottom:2.5%;transform:translateX(-50%);padding:.6cqw 1.4cqw .8cqw;font-size:clamp(12px,2cqw,20px);display:grid;gap:.25em;min-width:34%;}
+.m-row{display:grid;grid-template-columns:6.2em 1fr;align-items:center;gap:.6em;}
+.m-bar{height:clamp(8px,1.4cqw,14px);background:#1b131c;border:2px solid #000;box-shadow:inset 0 0 0 1px #3a2c36;}
+.m-bar i{display:block;height:100%;width:0;background:var(--ember);}
+#m-bal{background:#9cc46a;} #m-bal.low{background:var(--danger);}
+
+#ending{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1.4cqw;padding:0 10%;text-align:center;pointer-events:none;}
+#ending-lines{display:grid;gap:1.2cqw;width:100%;max-width:34em;}
+#ending-lines p{margin:0;font-size:clamp(14px,2.7cqw,28px);line-height:1.15;color:var(--bone);text-wrap:balance;animation:rise 1.6s steps(12) both;}
+#ending-lines p.small{font-size:clamp(11px,1.8cqw,18px);color:var(--bone-dim);letter-spacing:.08em;}
+#ending-cycle{margin:0;font-family:var(--f-display);font-size:clamp(14px,2.6cqw,26px);letter-spacing:.3em;color:var(--ember);text-transform:uppercase;animation:rise 1.6s steps(12) both;}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- tela inicial ---------- */
+#title{position:fixed;inset:0;z-index:30;overflow:auto;display:grid;place-items:center;box-sizing:border-box;
+  padding-block:max(20px,env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background:linear-gradient(90deg,rgba(7,4,10,.92) 0%,rgba(7,4,10,.7) 38%,rgba(7,4,10,.28) 64%,rgba(7,4,10,.72) 100%);}
+.t-wrap{width:min(1120px,100%);display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);grid-template-areas:"main how" "journey journey";
+  gap:clamp(18px,3vw,36px) clamp(24px,4vw,56px);align-items:center;}
+.t-main{grid-area:main;min-width:0;}
+.t-eyebrow{margin:0 0 .5em;font-family:var(--f-display);font-size:clamp(12px,1.3vw,15px);letter-spacing:.28em;text-transform:uppercase;color:var(--ember);}
+#t-name{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(54px,9.5vw,122px);line-height:.9;color:var(--bone);letter-spacing:.02em;
+  text-shadow:6px 6px 0 #2a1610,12px 12px 0 rgba(42,22,16,.55);animation:cast 4s steps(10) infinite alternate;}
+@keyframes cast{from{text-shadow:6px 6px 0 #2a1610,12px 12px 0 rgba(42,22,16,.55)}to{text-shadow:11px 6px 0 #2a1610,22px 12px 0 rgba(42,22,16,.4)}}
+.t-sub{margin:.4em 0 0;font-family:var(--f-display);font-size:clamp(20px,2.4vw,30px);color:var(--bone-dim);}
+.t-lede{margin:.8em 0 1.2em;max-width:44ch;font-size:clamp(20px,1.9vw,24px);line-height:1.12;}
+.t-start{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+#start{font-family:var(--f-display);font-weight:700;font-size:clamp(20px,2.1vw,26px);letter-spacing:.06em;color:#1c1218;background:var(--ember);
+  border:0;padding:.5em 1.3em .55em;cursor:pointer;box-shadow:0 5px 0 var(--ember-deep),0 0 0 3px #000,0 5px 0 3px #000;animation:pulse 1.6s steps(4) infinite;}
+@keyframes pulse{50%{background:#ffbf5c}}
+#start:hover{background:#ffbf5c;}
+#start:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ember-deep),0 0 0 3px #000,0 1px 0 3px #000;}
+.t-hint{font-size:20px;color:var(--bone-dim);}
+.t-cycle{margin:1em 0 0;font-size:19px;color:var(--bone-dim);}
+.t-how{grid-area:how;min-width:0;padding:clamp(16px,2vw,24px);}
+.t-how h2,.t-journey-h{margin:0 0 .8em;font-family:var(--f-display);font-size:15px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:var(--ember);}
+.keys{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:11px 16px;align-items:center;}
+.keys li{display:contents;}
+.keys .k{white-space:nowrap;justify-self:end;font-size:18px;color:var(--bone-dim);}
+.keys .k kbd{font-size:17px;}
+.keys .d{font-size:22px;line-height:1.02;}
+.keys .d small{display:block;font-size:17px;color:var(--bone-dim);}
+.t-tip{margin:14px 0 0;padding-top:12px;border-top:2px dashed #2e2230;font-size:19px;line-height:1.1;color:var(--bone-dim);}
+.lens{display:inline-grid;place-items:center;width:1.2em;height:1.2em;margin:0 .15em;font-family:var(--f-display);font-weight:700;font-size:.9em;color:#1c1218;background:#ffd38a;box-shadow:0 0 0 2px #1a0f0c;vertical-align:.05em;}
+.t-journey-wrap{grid-area:journey;min-width:0;}
+.t-journey{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;}
+.t-journey li{padding:10px 12px 12px;background:rgba(12,8,15,.78);border:2px solid #2e2230;display:grid;gap:3px;align-content:start;}
+.t-journey b{font-family:var(--f-display);color:var(--ember);font-size:13px;letter-spacing:.22em;}
+.t-journey span{font-family:var(--f-display);font-size:17px;line-height:1.05;color:var(--bone);}
+.t-journey small{font-size:18px;line-height:1.02;color:var(--bone-dim);}
+.t-touch{display:none;margin:12px 0 0;font-size:19px;color:var(--bone-dim);}
+@media (pointer:coarse){.t-touch{display:block}}
+@media (max-width:860px){.t-wrap{grid-template-columns:1fr;grid-template-areas:"main" "how" "journey"}.t-journey{grid-template-columns:1fr 1fr}}
+
+/* ---------- controles de toque ---------- */
+#touch{display:none;width:min(100%,680px);justify-content:space-between;gap:16px;}
+@media (pointer:coarse){#touch{display:flex}}
+#touch .pad{display:flex;gap:12px;}
+#touch button{width:76px;height:76px;font-family:var(--f-display);font-weight:700;font-size:26px;color:var(--bone);background:#1d1520;border:2px solid var(--rock-line);
+  box-shadow:inset 0 0 0 2px #120c14,0 4px 0 #000;touch-action:none;user-select:none;-webkit-user-select:none;}
+#touch button.on{background:var(--ember);color:#1c1218;}
+
+@container (max-width:620px){
+  #hud-scene{display:none}
+  #hud{padding:6px 8px;font-size:12px}
+  #hud-goal{max-width:66cqw}
+  #hud-cycle{display:none}
+  #mute{white-space:nowrap}
+  #dialog{top:19%;left:2%;right:2%;font-size:14px;padding:6px 8px 10px 6px;gap:8px}
+  #qte{top:19%;width:84%}
+  #toast{bottom:3%}
+}
+@media (prefers-reduced-motion:reduce){#t-name,#dialog-next,#start,.d-face.talk{animation:none}}
+</style>
+
+<div id="app">
+  <div id="stage" tabindex="-1">
+    <canvas id="game" width="384" height="216" aria-label="A Ilusão: jogo baseado na Alegoria da Caverna de Platão"></canvas>
+    <div id="hud" hidden>
+      <div class="hud-left"><span id="hud-scene"></span><span id="hud-goal"><b>Objetivo</b><span id="hud-goal-text"></span></span></div>
+      <div class="hud-right"><span id="hud-deaths" hidden></span><span id="hud-cycle"></span><button id="mute" type="button" aria-pressed="false">Som ligado</button></div>
+    </div>
+    <div id="card" hidden><span id="card-eyebrow"></span><h2 id="card-title"></h2></div>
+    <div id="toast" class="panel" hidden></div>
+    <div id="meter" class="panel" hidden>
+      <div class="m-row"><span>Firmeza</span><div class="m-bar"><i id="m-firm"></i></div></div>
+      <div class="m-row"><span>Equilíbrio</span><div class="m-bar"><i id="m-bal"></i></div></div>
+    </div>
+    <div id="prompt" class="panel" hidden></div>
+    <div id="qte" class="panel" hidden>
+      <div class="qte-head"><span id="qte-label">Golpe 1 de 3</span><span class="pips"><i></i><i></i><i></i></span></div>
+      <div class="qte-bar" id="qte-bar"><div id="qte-zone"></div><div id="qte-cursor"></div></div>
+      <div id="qte-hint">Aperte <kbd>E</kbd> quando o marcador passar pela faixa dourada</div>
+    </div>
+    <div id="dialog" class="panel" aria-live="polite">
+      <div class="d-face" id="d-face"><canvas id="portrait" width="32" height="32"></canvas></div>
+      <div class="d-body"><span id="dialog-who"></span><p id="dialog-text"></p><div id="dialog-choices" hidden></div></div>
+      <span id="dialog-next">▼</span>
+    </div>
+    <div id="ending" hidden><div id="ending-lines"></div><p id="ending-cycle"></p></div>
+  </div>
+  <div id="touch" aria-hidden="true">
+    <div class="pad"><button type="button" data-k="left">◀</button><button type="button" data-k="right">▶</button></div>
+    <div class="pad"><button type="button" data-k="act">E</button><button type="button" data-k="jump">▲</button></div>
+  </div>
+</div>
+
+<div id="title" role="dialog" aria-labelledby="t-name">
+  <div class="t-wrap">
+    <header class="t-main">
+      <p class="t-eyebrow">Platão · A República, Livro VII</p>
+      <h1 id="t-name">A Ilusão</h1>
+      <p class="t-sub">O Interior da Caverna</p>
+      <p class="t-lede">Code nasceu acorrentado diante de um muro e só conhece sombras. Liberte-se, descubra de onde elas vêm e caminhe até a luz.</p>
+      <div class="t-start"><button id="start" type="button">Começar</button><span class="t-hint">ou aperte <kbd>Enter</kbd></span></div>
+      <p class="t-cycle" id="t-cycle" hidden></p>
+    </header>
+    <section class="t-how panel" aria-label="Como jogar">
+      <h2>Como jogar</h2>
+      <ul class="keys">
+        <li><span class="k"><kbd>←</kbd><kbd>→</kbd> ou <kbd>A</kbd><kbd>D</kbd></span><span class="d">Andar e escolher</span></li>
+        <li><span class="k"><kbd>Espaço</kbd> ou <kbd>W</kbd></span><span class="d">Pular</span></li>
+        <li><span class="k"><kbd>E</kbd></span><span class="d">Interagir · Examinar<small>Quebrar correntes, falar, pegar</small></span></li>
+        <li><span class="k">segure <kbd>E</kbd></span><span class="d">Apoiar-se na parede</span></li>
+        <li><span class="k"><kbd>S</kbd> / <kbd>N</kbd></span><span class="d">Responder Sim ou Não</span></li>
+        <li><span class="k"><kbd>Enter</kbd> ou clique</span><span class="d">Avançar diálogo<small>Mouse ou teclado: selecionar e agir</small></span></li>
+      </ul>
+      <p class="t-tip">Viu o ícone <span class="lens">?</span> brilhando? Chegue perto e aperte <kbd>E</kbd> para examinar.</p>
+      <p class="t-touch">No celular, use os botões abaixo da tela.</p>
+    </section>
+    <div class="t-journey-wrap">
+      <p class="t-journey-h">A jornada</p>
+      <ol class="t-journey">
+        <li><b>I</b><span>As Correntes</span><small>Converse e acerte 3 golpes com a pedra</small></li>
+        <li><b>II</b><span>Primeiros Passos</span><small>Apoie-se na parede e descubra a fogueira</small></li>
+        <li><b>III</b><span>O Parkour</span><small>Pule até a luz. Estacas reiniciam a fase</small></li>
+        <li><b>IV</b><span>O Ofuscamento</span><small>Caminhe até a saída da caverna</small></li>
+        <li><b>V</b><span>O Mundo Exterior</span><small>Explore e examine tudo que encontrar</small></li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script>
