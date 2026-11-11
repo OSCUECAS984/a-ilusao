@@ -985,7 +985,7 @@ const Scenes = {
     enter(id, from) {
       if (from === 'exit') {   // voltando da subida: Code já está firme e já viu as estátuas
         resetPlayer(CH.exitX - 24, CH.floor); P.face = -1; ST.leaving = false; ST.steady = true; ST.revealed = true; ST.first = false;
-        G.camTX = null; G.camX = clamp(P.x - 170, 0, CH.W - W); G.control = false; fade.a = 1; parts.length = 0; G.step = 'stepStone';
+        G.camTX = null; G.camX = clamp(P.x - 170, 0, CH.W - W); G.camY = 0; G.control = false; fade.a = 1; parts.length = 0; G.step = 'stepStone';   // camY zerado: a subida deixa a câmera rolada para baixo
         setInspect(INSPECT_STEPS); setAmbience('cave', 2);
         (async () => { await fadeTo(0, .6); if (id !== run) return; setGoal('Examine o salão · saia pela passagem →'); G.control = true; })();
         return;
@@ -1068,6 +1068,7 @@ function go(name, from) {
   run++; waits.length = 0; G.backT = 0;
   if (D.active) { D.active = false; D.res = null; D.choices = null; UI.dialog.classList.remove('open'); }
   hidePrompt(); meter(false); Q.active = false; UI.qte.hidden = true; setInspect([]); G.onInspected = null;
+  UI.toast.hidden = true; UI.toast.classList.remove('show');   // aviso da fase anterior não atravessa para a próxima
   if (name !== 'ending') UI.ending.hidden = true;
   G.scene = name; Scenes[name].enter(run, from); hud();
 }

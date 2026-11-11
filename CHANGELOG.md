@@ -1,5 +1,10 @@
 # Histórico de versões
 
+## v3.1.1 · 11/11/2026
+
+- **Correção:** ao voltar da subida (Cenário III) para o salão das estátuas, Code e a pedra apareciam no alto da tela. A câmera vertical da subida não era zerada na volta; agora é, e Code aparece no chão, ao lado da passagem.
+- Avisos da fase anterior não continuam na tela ao trocar de fase.
+
 ## v3.1.0 · 11/11/2026
 
 - **Estátuas (Cenário II):** a interação que era só do cavalo agora vale para todas as estátuas ao mesmo tempo. Um único ponto "As estátuas", no meio da passarela, e durante a fala todas brilham juntas enquanto Code percebe que as sombras do muro eram cópias delas.
