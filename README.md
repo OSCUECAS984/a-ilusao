@@ -5,7 +5,7 @@ Feito em HTML5 Canvas puro, num único arquivo, sem imagens nem sons externos: t
 
 > **Repositório privado.** Serve de backup e organização do projeto até a primeira versão pública.
 
-Versão atual: **v3.0.1** · veja o [CHANGELOG](CHANGELOG.md).
+Versão atual: **v3.1.0** · veja o [CHANGELOG](CHANGELOG.md).
 
 ---
 
@@ -40,6 +40,8 @@ No celular aparecem botões de toque abaixo da tela.
 | V | O Mundo Exterior | Exploração livre com animais, rio, cachoeira, vila e o sol. Ao se aproximar demais da vista, Code cai do precipício e o ciclo recomeça no Cenário I. |
 
 Objetos com o ícone **?** podem ser examinados com `E`.
+
+Para voltar à fase anterior, encoste na borda esquerda e segure `←` (não vale no Mundo Exterior).
 
 ---
 

@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## v3.1.0 · 11/11/2026
+
+- **Estátuas (Cenário II):** a interação que era só do cavalo agora vale para todas as estátuas ao mesmo tempo. Um único ponto "As estátuas", no meio da passarela, e durante a fala todas brilham juntas enquanto Code percebe que as sombras do muro eram cópias delas.
+- **Entrada da caverna (Cenário IV):** Code volta a pular enquanto está de olhos abertos. Quando a luz fica forte demais e ele fecha os olhos, o jogador perde o controle e Code caminha sozinho, devagar e sem pular, até a saída.
+- **Voltar entre as fases:** encostado na borda esquerda, segure ← para voltar. Do Cenário IV volta-se ao alto da subida (Cenário III) e da base da subida volta-se ao salão das estátuas (Cenário II), já de pé e com tudo descoberto. Do Mundo Exterior não há volta.
+
 ## v3.0.1 · 11/11/2026
 
 Correções.

@@ -2033,6 +2033,7 @@ function drawChamber() {
   lighting(.76, L);
   // brilhos por cima do escuro: fogo, lanterna do pórtico, cogumelos e a luz do dia que desce pela fenda
   glow(fx, fy - 30, 140, '255,140,50', .3 * fl); glow(fx, fy - 12, 50, '255,220,150', .2 * fl);
+  if (ST.statueGlow) for (const s of STATUES) { const h = S.statue[s.k].height; glow(s.x - cx, s.y - h * .45, h * .55 + 6, '255,214,150', .22 + .1 * Math.sin(t * 4)); }
   glow(lpx, CH.lampY + 6, 38, '255,160,70', .3 * fl);
   for (const [mx, big] of HALL_SHROOMS) glow(mx - cx, F - 4, big ? 12 : 9, '170,120,255', .3 + .08 * Math.sin(t * 2 + mx));
   if (cx > 420) {
@@ -2152,12 +2153,20 @@ function updateStrike(dt) {
 
 // ================================ CENÁRIO II · Primeiros Passos e Fogueira
 const ST = {};
-// Só as interações que carregam a história: o cavalo (a sombra era cópia de uma cópia) e a fogueira (o real queima).
-const statueLines = {
-  horse: [['code', 'shock', 'O Grande Cavalo do Místico... é só uma estátua. Fria e parada.'], ['code', 'think', 'A sombra parecia viva porque o fogo tremia, não porque o cavalo se mexia.']],
-};
+// Só as interações que carregam a história: as estátuas (as sombras eram cópias de cópias) e a fogueira (o real queima).
+// As estátuas são examinadas juntas: um ponto só, no meio da passarela, e todas brilham ao mesmo tempo durante a fala.
+const STATUE_LINES = [
+  ['code', 'shock', 'O escudo, o cavalo, o guerreiro, a árvore, o pássaro... Todas as sombras do muro estão aqui, paradas.'],
+  ['code', 'think', 'São estátuas de pedra, cópias de coisas que eu nunca vi. As sombras eram cópias dessas cópias.'],
+  ['code', 'worried', 'Pareciam vivas só porque o fogo tremia. Nenhuma delas se mexeu de verdade.'],
+];
+async function inspectStatues() {
+  ST.statueGlow = true;
+  await talk(STATUE_LINES);
+  ST.statueGlow = false;
+}
 const INSPECT_STEPS = [
-  { id: 'horse', x: 708, iy: 80, r: 22, label: 'O cavalo de pedra', cond: () => ST.revealed, run: () => talk(statueLines.horse) },
+  { id: 'statues', x: 760, iy: 56, r: 110, label: 'As estátuas', cond: () => ST.revealed, run: inspectStatues },
   { id: 'fire', x: CH.fireX, iy: 128, r: 24, verb: 'Tocar', label: 'A fogueira', cond: () => ST.revealed, run: () => inspectFire() },
 ];
 // Tocar o fogo queima na hora, sem pergunta: o real tem efeitos que a sombra não tem.
@@ -2259,13 +2268,20 @@ async function reveal(id) {
   await say('Chegue perto das coisas marcadas com ? e aperte E para examiná-las.', 'sistema');
   if (id !== run) return;
   P.pose = null; P.sweat = false; G.camTX = null; G.control = true;
-  setGoal('Examine o cavalo de pedra e a fogueira · saia pela passagem →');
+  setGoal('Examine as estátuas e a fogueira · saia pela passagem →');
 }
 
 // =========================================== CENÁRIO III · A Ascensão
 // Quase tudo é breu: Code só enxerga um círculo ao redor de si, que cresce um pouco conforme sobe.
 // Aqui não entra luz do dia: só a lanterna e os cogumelos. O sol fica guardado para a boca da caverna.
 function pkSolids() { return [...PK_SOLIDS, PK_CEIL, ...PK.movers]; }
+// Voltar de fase: Code encostado na borda esquerda e o jogador segurando ← por um instante.
+function backEdge(dt, atEdge, label, leave) {
+  if (!atEdge || !G.control) { G.backT = 0; hidePrompt('back'); return; }
+  setPrompt(`Segure <kbd>←</kbd> ${label}`, P.x + 74, P.y - 40, false, 'back');   // à direita de Code, para não sair da tela
+  G.backT = keys.left ? (G.backT || 0) + dt : 0;
+  if (G.backT > .35) { G.control = false; G.backT = 0; hidePrompt('back'); fadeTo(1, .6).then(leave); }
+}
 function pkUpdate(dt) {
   for (const m of PK.movers) {
     const ox = m.x, oy = m.y, k = .5 - .5 * Math.cos(G.time * TAU / m.per);
@@ -2283,6 +2299,7 @@ function pkUpdate(dt) {
     controlPlayer(dt); physics(dt, pkSolids()); P.x = clamp(P.x, 12, PK.W - 10);
     if (P.y > PK.death && !PK.dying) pkDie(run);
     if (!PK.done && !PK.dying && P.x > PK.exitX && P.onGround && P.y <= PK.top) pkExit(run);
+    backEdge(dt, P.x <= 13 && P.onGround && P.y >= PK.base - 1, 'Voltar para o salão', () => go('steps', 'exit'));
   }
   const k = clamp((PK.base - P.y) / (PK.base - PK.top), 0, 1); PK.k += (k - PK.k) * Math.min(1, dt * 2.5);
   PK.rad = 58 + 56 * Math.pow(PK.k, 1.4);
@@ -2334,15 +2351,22 @@ const INSPECT_L4 = [
 ];
 function lightUpdate(dt) {
   const floor = [{ x: -20, y: CH.floor, w: MOUTH.W + 200, h: 40 }];
+  const glare = smooth(300, MOUTH.trig, P.x); L4.glare = glare;
   if (G.control) {
-    const glare = smooth(300, MOUTH.trig, P.x); L4.glare = glare;
-    controlPlayer(dt, { max: 80 * (1 - .55 * glare), jump: false }); physics(dt, floor); P.x = Math.max(P.x, 12);
-    P.pose = glare > .5 ? (Math.abs(P.vx) > 4 ? 'coverWalk' : 'coverIdle') : null;
-    G.white = glare * .5;
-    if (P.x > 330 && !L4.nature) { L4.nature = true; setAmbience('nature', 7); }
-    if (glare > .5 && !L4.told) { L4.told = true; toast('A luz cega! Code cobre os olhos e anda mais devagar.', 3.4); }
-    if (P.x >= MOUTH.trig && !L4.trig) blind(run);
+    // olhos abertos: o jogador anda e pula; perto da borda esquerda ele pode voltar para a subida
+    controlPlayer(dt, { max: 80 * (1 - .4 * glare) }); physics(dt, floor); P.x = Math.max(P.x, 12);
+    backEdge(dt, P.x <= 13 && P.onGround, 'Voltar para a subida', () => go('parkour', 'top'));
+    // a luz fica forte demais: Code fecha os olhos e o jogador perde o controle
+    if (glare >= L4.EYES && P.onGround) { G.control = false; L4.auto = true; hidePrompt(); setGoal('...'); toast('A luz cega! Code cobre os olhos e segue sozinho até a saída.', 3.4); }
+  } else if (L4.auto && !L4.trig) {
+    // de olhos fechados: caminha sozinho, devagar, até a saída (sem pular)
+    P.face = 1; P.vx = 34; physics(dt, floor); P.walkT += P.vx * dt;
+    P.stepT += P.vx * dt; if (P.stepT > 26) { P.stepT = 0; sfx(G.step); }
+    P.pose = 'coverWalk';
+    if (P.x >= MOUTH.trig) blind(run);
   } else { P.vx = 0; physics(dt, floor); }
+  if (!L4.trig) G.white = glare * .5;
+  if (P.x > 330 && !L4.nature) { L4.nature = true; setAmbience('nature', 7); }
   if (L4.whiteUp) G.white = Math.min(1, G.white + dt * .8);
   if (L4.stagger) { L4.st += dt; P.x = L4.bx + Math.sin(L4.st * 4.5) * 8 - L4.st * 6; P.face = Math.cos(L4.st * 4.5) > 0 ? 1 : -1; P.pose = 'wob'; }
   G.camX += (clamp(P.x - 170, 0, MOUTH.W - W) - G.camX) * Math.min(1, dt * 4);
@@ -2609,7 +2633,14 @@ const Scenes = {
     draw: drawChamber,
   },
   steps: {
-    enter() {
+    enter(id, from) {
+      if (from === 'exit') {   // voltando da subida: Code já está firme e já viu as estátuas
+        resetPlayer(CH.exitX - 24, CH.floor); P.face = -1; ST.leaving = false; ST.steady = true; ST.revealed = true; ST.first = false;
+        G.camTX = null; G.camX = clamp(P.x - 170, 0, CH.W - W); G.control = false; fade.a = 1; parts.length = 0; G.step = 'stepStone';
+        setInspect(INSPECT_STEPS); setAmbience('cave', 2);
+        (async () => { await fadeTo(0, .6); if (id !== run) return; setGoal('Examine o salão · saia pela passagem →'); G.control = true; })();
+        return;
+      }
       Object.assign(ST, { firm: 0, wob: 0, grip: 1, gripCd: 0, holding: false, tired: false, slip: 0, fallen: 0, first: true, steady: false, revealed: false, leaving: false, npcTalk: false, prompt: 'try' });
       G.control = true; P.pose = null; P.face = 1; setInspect(INSPECT_STEPS);
       card('Cenário II', 'Os Primeiros Passos e a Fogueira'); setGoal('Tente andar para a direita →');
@@ -2623,9 +2654,13 @@ const Scenes = {
     draw: drawChamber,
   },
   parkour: {
-    enter(id) {
-      resetPlayer(30, PK.base); G.camX = 0; G.camY = PK.H - H; G.control = false; G.white = 0; fade.a = 1; parts.length = 0; G.step = 'stepStone';
+    enter(id, from) {
+      G.control = false; G.white = 0; fade.a = 1; parts.length = 0; G.step = 'stepStone';
       Object.assign(PK, { dying: false, done: false, k: 0, rad: 58 });
+      if (from === 'top') {   // voltando da entrada da caverna: chega no alto, perto da passagem
+        resetPlayer(PK.exitX - 34, PK.top); P.face = -1; PK.k = 1; PK.rad = 114;
+      } else resetPlayer(30, PK.base);
+      G.camX = clamp(P.x - 160, 0, PK.W - W); G.camY = clamp(P.y - 126, 0, PK.H - H);
       PK.movers = MOVERS_DEF.map(m => ({ ...m, dx: 0, dy: 0, spr: LAYER['mover' + m.x] }));
       setInspect([]); setAmbience('cave', 2);
       (async () => {
@@ -2642,7 +2677,7 @@ const Scenes = {
   light: {
     enter(id) {
       resetPlayer(24, CH.floor); G.camX = 0; G.camY = 0; G.control = false; G.white = 0; fade.a = 1; parts.length = 0; G.step = 'stepStone';
-      Object.assign(L4, { trig: false, whiteUp: false, stagger: false, glare: 0, nature: false, told: false });
+      Object.assign(L4, { trig: false, whiteUp: false, stagger: false, glare: 0, nature: false, auto: false, EYES: .7 });
       setInspect(INSPECT_L4); setAmbience('cave', 2);
       (async () => { await fadeTo(0, 1); if (id !== run) return; card('Cenário IV', 'A Entrada da Caverna'); setGoal('Caminhe em direção à luz →'); G.control = true; })();
     },
@@ -2679,12 +2714,13 @@ const Scenes = {
     draw() { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); },
   },
 };
-function go(name) {
-  run++; waits.length = 0;
+// from: de onde Code chega ('top' = volta do Cenário IV para o alto da subida; 'exit' = volta da subida para o salão)
+function go(name, from) {
+  run++; waits.length = 0; G.backT = 0;
   if (D.active) { D.active = false; D.res = null; D.choices = null; UI.dialog.classList.remove('open'); }
   hidePrompt(); meter(false); Q.active = false; UI.qte.hidden = true; setInspect([]); G.onInspected = null;
   if (name !== 'ending') UI.ending.hidden = true;
-  G.scene = name; Scenes[name].enter(run); hud();
+  G.scene = name; Scenes[name].enter(run, from); hud();
 }
 function startGame() {
   if (G.scene !== 'title') return;
