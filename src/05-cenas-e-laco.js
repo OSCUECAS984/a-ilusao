@@ -524,13 +524,14 @@ async function inspectFire() {
   P.pose = null;
 }
 // Primeiros passos. Três medidores:
-//   Firmeza    sobe quando Code anda por conta própria (devagar se anda apoiado). Cheia, ele anda e pula.
+//   Firmeza    sobe enquanto Code anda, solto ou apoiado na parede. Cheia, ele anda e pula.
 //   Equilíbrio cai enquanto ele anda solto; zerado, ele tomba e perde um pouco de firmeza.
-//   Apoio      é a força do braço na parede: segurar E recupera o equilíbrio, mas gasta o apoio; ele só
-//              volta com o braço solto. Agarrar de novo logo depois de soltar (ou com o braço esgotado)
-//              é um escorregão que tira equilíbrio — por isso apertar E sem parar derruba em vez de salvar.
+//   Apoio      é a força do braço na parede: segurar E recupera o equilíbrio e deixa andar com segurança,
+//              mas gasta o apoio (mais devagar parado); ele só volta com o braço solto. Quando o braço
+//              cansa, é preciso soltar E antes de agarrar de novo. Apertar E sem parar enquanto o braço
+//              ainda se recupera é um escorregão que tira equilíbrio.
 function stepsFall() {
-  ST.fallen = 1.4; ST.wob = 0; ST.holding = false; ST.slip = 0; ST.gripCd = 0; ST.firm = Math.max(0, ST.firm - .12); P.vx = 0; P.pose = 'lie';
+  ST.fallen = 1.4; ST.wob = 0; ST.holding = false; ST.tired = false; ST.slip = 0; ST.gripCd = 0; ST.firm = Math.max(0, ST.firm - .12); P.vx = 0; P.pose = 'lie';
   sfx('thud'); G.shake = 3; emit(P.x, P.y - 2, 12, { cols: ['#7a6a70', '#5a4a52'], sx: 36, sy: 8, vy: -14, life: .5 });
 }
 function stepsUpdate(dt) {
@@ -550,16 +551,17 @@ function stepsUpdate(dt) {
     ST.gripCd = Math.max(0, ST.gripCd - dt); ST.slip = Math.max(0, ST.slip - dt);
     if (!ST.first) {
       if (ST.holding) {
-        if (!want) { ST.holding = false; ST.gripCd = .55; }
-        else if (ST.grip <= 0) { ST.holding = false; ST.gripCd = 1.3; ST.slip = .5; ST.wob = Math.min(.96, ST.wob + .18); G.shake = 1.5; sfx('miss'); toast('O braço cansou! Solte E e deixe o Apoio voltar.', 2.6); }
-      } else if (hit('act') || hit('hold')) {
+        if (!want) { ST.holding = false; ST.gripCd = .35; }
+        else if (ST.grip <= 0) { ST.holding = false; ST.tired = true; ST.gripCd = 1; ST.slip = .5; ST.wob = Math.min(.96, ST.wob + .18); G.shake = 1.5; sfx('miss'); toast('O braço cansou! Solte E e deixe o Apoio voltar.', 2.6); }
+      } else if (!want) ST.tired = false;   // soltou E: pode agarrar de novo
+      else if (hit('act') || hit('hold')) {
         if (ST.gripCd > 0 || ST.grip < .15) { ST.wob += .16; ST.gripCd = .55; ST.slip = .4; G.shake = 1.5; sfx('miss'); }   // agarrão fora de hora: escorrega
         else ST.holding = true;
-      }
+      } else if (!ST.tired && ST.gripCd <= 0 && ST.grip >= .25) ST.holding = true;   // E já estava segurado (ex.: desde a queda): agarra assim que puder
     }
     if (ST.holding) {
-      ST.grip = Math.max(0, ST.grip - dt * .42); ST.wob = Math.max(0, ST.wob - dt * 1.5);
-      P.vx = dir * 18; if (dir) { P.face = dir; ST.firm = Math.min(1, ST.firm + dt * .035); }
+      ST.grip = Math.max(0, ST.grip - dt * (dir ? .15 : .06)); ST.wob = Math.max(0, ST.wob - dt * 1.5);
+      P.vx = dir * 20; if (dir) { P.face = dir; ST.firm = Math.min(1, ST.firm + dt * .12); }
       P.pose = dir ? 'wall' : 'wallIdle';
       if (dir && Math.random() < dt * 6) emit(P.x + dir * 8, P.y - 26, 1, { cols: ['#7a6a70'], sx: 4, sy: 4, vy: 10, g: 60, life: .5 });
     } else {
@@ -587,7 +589,7 @@ function stepsUpdate(dt) {
 async function afterFirstFall(id) {
   G.control = false;
   await say('As pernas de Code nunca sustentaram o próprio peso. O chão parece girar.', 'narrador');
-  await say('Ande sozinho para ganhar Firmeza. Quando o Equilíbrio estiver acabando, segure E para se apoiar na parede e solte para seguir.', 'sistema');
+  await say('Andar enche a Firmeza, solto ou apoiado. Solto, o Equilíbrio cai; segure E para se apoiar na parede e andar com segurança.', 'sistema');
   await say('O braço cansa: a barra de Apoio só volta com a mão solta. E apertar E sem parar não adianta, Code escorrega.', 'sistema');
   if (id !== run) return;
   G.control = true; ST.prompt = 'hold'; setGoal('Ande para ganhar Firmeza · segure E para se apoiar quando balançar');
@@ -714,7 +716,9 @@ function drawLight() {
   const t = G.time, cx = G.camX, mx = MOUTH.cx - cx;
   // lá fora, pela abertura: o mesmo céu, o mesmo sol e as mesmas montanhas do Cenário V, estourados de luz
   ctx.drawImage(LAYER.sky, 0, 0);
-  const sx = mx + 8, sy = 74;
+  // O sol, as montanhas e os raios usam o mesmo deslocamento: o sol fica preso ao ponto da cordilheira
+  // para onde as faces claras estão viradas, e todos os raios saem dele.
+  const farX = -Math.round(30 + cx * .12), sx = SUN4.x + farX, sy = SUN4.y;
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < 12; i++) {
     const a = t * .05 + i * TAU / 12, len = (i % 2 ? 70 : 110) + Math.sin(t * 1.3 + i) * 8;
@@ -724,16 +728,17 @@ function drawLight() {
   ctx.globalCompositeOperation = 'source-over';
   ell(ctx, sx, sy, 19, 19, '#ffe9a8'); ell(ctx, sx, sy, 16, 16, '#fff4cc'); ell(ctx, sx, sy, 12, 12, '#fffdf0');
   ctx.drawImage(S.cloudsFar[1], Math.round(mx - 120 + Math.sin(t * .05) * 10), 40); ctx.drawImage(S.clouds[1], Math.round(mx + 14 + t * 1.5 % 60), 22);
-  ctx.drawImage(LAYER.far, -Math.round(30 + cx * .12), 8);
-  ctx.drawImage(LAYER.hills, -Math.round(70 + cx * .3), 18);
+  ctx.drawImage(LAYER.farMouth, farX, 8);
+  ctx.drawImage(LAYER.hillsMouth, -Math.round(70 + cx * .3), 18);
   ctx.fillStyle = 'rgba(255,240,206,.26)'; ctx.fillRect(0, 0, W, H);
   ctx.drawImage(LAYER.mouth, -Math.round(cx), 0);
-  // raios entrando pela boca e poeira no ar
+  // raios entrando pela boca: leque de feixes que nascem no sol e se abrem para dentro da caverna
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < 6; i++) {
-    const a = .05 + .035 * Math.sin(t * .8 + i * 1.7), y0 = 44 + i * 21, spread = 16 + i * 8;
-    const gr = ctx.createLinearGradient(mx - 60, 0, mx - 420, 0); gr.addColorStop(0, `rgba(255,232,176,${a})`); gr.addColorStop(1, 'rgba(255,232,176,0)');
-    ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(mx - 60, y0); ctx.lineTo(mx - 60, y0 + 13); ctx.lineTo(mx - 420, y0 + 52 + spread); ctx.lineTo(mx - 420, y0 + spread); ctx.closePath(); ctx.fill();
+    const a = .06 + .035 * Math.sin(t * .8 + i * 1.7), ang = Math.PI * (.93 + i * .028), half = .012 + i * .003, len = 520;
+    const gr = ctx.createRadialGradient(sx, sy, 20, sx, sy, len); gr.addColorStop(0, `rgba(255,232,176,${a})`); gr.addColorStop(1, 'rgba(255,232,176,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(sx, sy);
+    ctx.lineTo(sx + Math.cos(ang - half) * len, sy + Math.sin(ang - half) * len); ctx.lineTo(sx + Math.cos(ang + half) * len, sy + Math.sin(ang + half) * len); ctx.closePath(); ctx.fill();
   }
   ctx.globalCompositeOperation = 'source-over';
   for (let i = 0; i < 34; i++) { const x = (i * 41 + t * 6) % 420 + mx - 430, y = 40 + (i * 29 % 134) + Math.sin(t + i) * 4; ctx.fillStyle = `rgba(255,240,200,${.3 + .25 * Math.sin(t * 1.4 + i)})`; ctx.fillRect(Math.round(x), Math.round(y), 1, 1); }
@@ -954,7 +959,7 @@ const Scenes = {
   },
   steps: {
     enter() {
-      Object.assign(ST, { firm: 0, wob: 0, grip: 1, gripCd: 0, holding: false, slip: 0, fallen: 0, first: true, steady: false, revealed: false, leaving: false, npcTalk: false, prompt: 'try' });
+      Object.assign(ST, { firm: 0, wob: 0, grip: 1, gripCd: 0, holding: false, tired: false, slip: 0, fallen: 0, first: true, steady: false, revealed: false, leaving: false, npcTalk: false, prompt: 'try' });
       G.control = true; P.pose = null; P.face = 1; setInspect(INSPECT_STEPS);
       card('Cenário II', 'Os Primeiros Passos e a Fogueira'); setGoal('Tente andar para a direita →');
       setPrompt('Tente andar <kbd>→</kbd>', 0, 0, true, 'step');

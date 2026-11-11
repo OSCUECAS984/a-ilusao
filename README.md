@@ -5,7 +5,7 @@ Feito em HTML5 Canvas puro, num único arquivo, sem imagens nem sons externos: t
 
 > **Repositório privado.** Serve de backup e organização do projeto até a primeira versão pública.
 
-Versão atual: **v3.0.0** · veja o [CHANGELOG](CHANGELOG.md).
+Versão atual: **v3.0.1** · veja o [CHANGELOG](CHANGELOG.md).
 
 ---
 

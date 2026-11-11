@@ -384,6 +384,29 @@ function bigTree(g, x, base, s, R, seed) {
   TREE_LOBES.forEach(([dx, dy, rx, ry], i) => leafClump(g, tx + dx * s + (R() - .5) * 3, cy0 + dy * s + (R() - .5) * 2, rx * s, ry * s, RK.leaf, seed + 20 + i));
   return { cx: tx, cy: cy0 - 8 * s, rx: 80 * s, ry: 36 * s };
 }
+// Cordilheira do fundo com as faces claras viradas para sunX (coordenada dentro da camada).
+function farLayer(sunX) {
+  const pix = new Pix(layerW(PAR.far), H);
+  mountains(pix, [[30, 80, .55, .5], [124, 54, .62, .7], [214, 98, .4, .45], [306, 50, .66, .56], [392, 78, .5, .6], [476, 60, .6, .5]], ramp('#4a4088', '#5a4894', '#6c52a0', '#8a60a4', '#b87aa0', '#e8a090'), sunX, 61, 118, '#f6a878');
+  mountains(pix, [[-14, 106, .5, .45], [84, 92, .5, .62], [166, 122, .34, .4], [262, 116, .4, .42], [350, 88, .56, .5], [438, 108, .46, .5], [508, 96, .5, .5]], ramp('#2e2862', '#3a3070', '#4a3a7e', '#684888', '#965c88', '#cc8280'), sunX, 67, 132, '#f09a74');
+  return pix.done()[0];
+}
+// Colinas ao entardecer, com pinheiros, cerca e as casas ao longe. lx: lado da luz (-1 esquerda, 1 direita).
+function hillsLayer(lx, withSheep) {
+  const pix = new Pix(layerW(PAR.hills), H), R = rng(41);
+  const hillA = x => 136 + jag(x, 53, 7, 81) + jag(x, 17, 2, 82), hillB = x => 151 + jag(x, 37, 5, 83) + jag(x, 11, 1.5, 84);
+  terrain(pix, (x, y) => y >= hillA(x), { ramp: ramp('#22384a', '#2c4c50', '#386452', '#507e54', '#84a058', '#d0c064'), cw: 20, ch: 5, seed: 85, lx, contrast: .5, deep: 0 });
+  terrain(pix, (x, y) => y >= hillB(x), { ramp: ramp('#182c38', '#203e3c', '#2a5440', '#3e6e44', '#688e48', '#b0b454'), cw: 16, ch: 5, seed: 86, lx, contrast: .5, deep: 0 });
+  const [c, g] = pix.done();
+  for (let i = 0; i < 34; i++) { const x = (R() * c.width) | 0; if (Math.abs(x - 484) < 50) continue; (R() < .6 ? pine : cypress)(g, x, Math.round(hillA(x)) + 3, 12 + ((R() * 16) | 0), RK.pine, lx, i); }
+  const vx = 470, vy = Math.round(hillA(vx)) + 3;
+  cottage(g, vx, vy); fence(g, vx - 58, vx - 22, vy + 1); cypress(g, vx - 24, vy + 1, 26, RK.pine, lx, 7); pine(g, vx + 50, vy + 1, 22, RK.pine, lx);
+  for (let i = 0; i < 30; i++) { const x = (R() * c.width) | 0; pine(g, x, Math.round(hillB(x)) + 3, 9 + ((R() * 9) | 0), RK.leafD, lx); }
+  if (withSheep) { OUT.sheep = []; for (let i = 0; i < 9; i++) { const x = 120 + R() * 280; OUT.sheep.push([x, hillB(x) + 5 + R() * 10]); } }
+  return c;
+}
+// Cenário IV: posição fixa do sol dentro da camada das montanhas (ele se move junto com elas, como algo distante)
+const SUN4 = { x: 391, y: 74 };
 function buildOutside() {
   // céu de fim de tarde: faixas pontilhadas do índigo ao dourado, com estrias de nuvem no horizonte
   let pix = new Pix(W, H), R = rng(40), c, g;
@@ -391,23 +414,10 @@ function buildOutside() {
   [c, g] = pix.done();
   for (let i = 0; i < 9; i++) { const y = 96 + i * 5 + ((R() * 4) | 0), x = (R() * W) | 0, w = 30 + ((R() * 70) | 0), col = i % 2 ? '#ffd9a0' : '#f6a888'; rect(g, x, y, w, 1, col); rect(g, x + 6, y - 1, w - 16, 1, col); rect(g, x + 10, y + 1, w - 14, 1, '#d88a98'); }
   LAYER.sky = c;
-  // montanhas: duas cordilheiras imponentes, a de trás mais pálida
-  pix = new Pix(layerW(PAR.far), H);
-  mountains(pix, [[30, 80, .55, .5], [124, 54, .62, .7], [214, 98, .4, .45], [306, 50, .66, .56], [392, 78, .5, .6], [476, 60, .6, .5]], ramp('#4a4088', '#5a4894', '#6c52a0', '#8a60a4', '#b87aa0', '#e8a090'), 210, 61, 118, '#f6a878');
-  mountains(pix, [[-14, 106, .5, .45], [84, 92, .5, .62], [166, 122, .34, .4], [262, 116, .4, .42], [350, 88, .56, .5], [438, 108, .46, .5], [508, 96, .5, .5]], ramp('#2e2862', '#3a3070', '#4a3a7e', '#684888', '#965c88', '#cc8280'), 210, 67, 132, '#f09a74');
-  LAYER.far = pix.done()[0];
-  // colinas ao entardecer, com pinheiros, cerca e as casas ao longe
-  pix = new Pix(layerW(PAR.hills), H); R = rng(41);
-  const hillA = x => 136 + jag(x, 53, 7, 81) + jag(x, 17, 2, 82), hillB = x => 151 + jag(x, 37, 5, 83) + jag(x, 11, 1.5, 84);
-  terrain(pix, (x, y) => y >= hillA(x), { ramp: ramp('#22384a', '#2c4c50', '#386452', '#507e54', '#84a058', '#d0c064'), cw: 20, ch: 5, seed: 85, lx: -1, contrast: .5, deep: 0 });
-  terrain(pix, (x, y) => y >= hillB(x), { ramp: ramp('#182c38', '#203e3c', '#2a5440', '#3e6e44', '#688e48', '#b0b454'), cw: 16, ch: 5, seed: 86, lx: -1, contrast: .5, deep: 0 });
-  [c, g] = pix.done();
-  for (let i = 0; i < 34; i++) { const x = (R() * c.width) | 0; if (Math.abs(x - 484) < 50) continue; (R() < .6 ? pine : cypress)(g, x, Math.round(hillA(x)) + 3, 12 + ((R() * 16) | 0), RK.pine, -1, i); }
-  const vx = 470, vy = Math.round(hillA(vx)) + 3;
-  cottage(g, vx, vy); fence(g, vx - 58, vx - 22, vy + 1); cypress(g, vx - 24, vy + 1, 26, RK.pine, -1, 7); pine(g, vx + 50, vy + 1, 22, RK.pine, -1);
-  for (let i = 0; i < 30; i++) { const x = (R() * c.width) | 0; pine(g, x, Math.round(hillB(x)) + 3, 9 + ((R() * 9) | 0), RK.leafD, -1); }
-  OUT.sheep = []; for (let i = 0; i < 9; i++) { const x = 120 + R() * 280; OUT.sheep.push([x, hillB(x) + 5 + R() * 10]); }
-  LAYER.hills = c;
+  // montanhas e colinas. Cada fase recebe a sua versão, com a luz vindo do lado onde o sol aparece nela:
+  // no Cenário V o sol fica à esquerda; no Cenário IV ele aparece na boca da caverna, à direita.
+  LAYER.far = farLayer(210); LAYER.hills = hillsLayer(-1, true);
+  LAYER.farMouth = farLayer(SUN4.x); LAYER.hillsMouth = hillsLayer(1, false);
   // vale: a mesa com a cachoeira, o lago, a floresta de pontas e a névoa lá embaixo
   pix = new Pix(layerW(PAR.valley), 300); R = rng(43);
   const VW = pix.w, mesaTop = x => 58 + jag(x, 23, 3, 91) + jag(x, 7, 1, 92), mesaL = y => 606 - (y - 58) * .3 + jag(y, 9, 3, 93), mesaR = y => 772 + (y - 58) * .22 + jag(y, 11, 3, 94);

@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## v3.0.1 · 11/11/2026
+
+Correções.
+
+- **Saída da caverna (Cenário IV):** o sol, a luz nas montanhas e os raios agora estão sincronizados. O sol fica preso ao ponto das montanhas para onde a luz aponta, as encostas iluminadas ficam viradas para ele e os feixes que entram na caverna saem do próprio sol. Antes, as faces claras das montanhas apontavam para o meio da tela, longe do sol.
+- **Apoio na parede (Cenário II):** andar segurando E agora enche a Firmeza (antes quase não enchia) e o Apoio dura cerca de 6 s andando, mais tempo parado. Segurar E antes de começar a andar, ou desde a queda, já agarra a parede (antes era preciso soltar e apertar de novo). Quando o braço cansa, é preciso soltar E para agarrar outra vez.
+- Texto do tutorial do Cenário II ajustado à regra nova.
+
 ## v3.0.0 · 11/11/2026
 
 Nova build enviada pela equipe, focada em arte.
