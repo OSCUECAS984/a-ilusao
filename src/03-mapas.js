@@ -1,187 +1,306 @@
-
 // ============================================================ MAPAS
 const LAYER = {};
+// polígono preenchido por varredura, sem antialias
+function polyFill(g, pts, col) {
+  let ya = 1e9, yb = -1e9; for (const p of pts) { ya = Math.min(ya, p[1]); yb = Math.max(yb, p[1]); }
+  g.fillStyle = col;
+  for (let y = Math.ceil(ya); y <= Math.floor(yb); y++) {
+    const xs = [];
+    for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; if ((a[1] <= y && b[1] > y) || (b[1] <= y && a[1] > y)) xs.push(a[0] + (y - a[1]) / (b[1] - a[1]) * (b[0] - a[0])); }
+    xs.sort((p, q) => p - q);
+    for (let i = 0; i + 1 < xs.length; i += 2) g.fillRect(Math.round(xs[i]), y, Math.max(1, Math.round(xs[i + 1]) - Math.round(xs[i])), 1);
+  }
+}
+// alvenaria de blocos talhados, de larguras e alturas desiguais (parapeito, canal do riacho)
+function blocks(g, x0, y0, w, h, R, P) {
+  const Hx = P.hex; rect(g, x0, y0, w, h, Hx[0]);
+  let y = y0;
+  while (y < y0 + h) {
+    const bh = Math.min(7 + ((R() * 4) | 0), y0 + h - y); let x = x0 - ((R() * 8) | 0);
+    while (x < x0 + w) {
+      const bw = 12 + ((R() * 12) | 0), xa = Math.max(x, x0), xb = Math.min(x + bw - 1, x0 + w), ww = xb - xa, hh = bh - 1;
+      if (ww > 2 && hh > 1) {
+        rect(g, xa, y, ww, hh, Hx[2 + ((R() * 2) | 0)]); rect(g, xa, y, ww, 1, Hx[4]); rect(g, xb - 1, y, 1, hh, Hx[4]); rect(g, xa, y + hh - 1, ww, 1, Hx[1]); rect(g, xa, y, 1, hh, Hx[1]);
+        rect(g, xa, y, 1, 1, Hx[0]); if (R() < .5) rect(g, xb - 1, y + hh - 1, 1, 1, Hx[0]);
+        if (ww > 6 && R() < .3) crack(g, xa + 2 + ((R() * (ww - 4)) | 0), y + 1, hh - 2, Hx[1], R);
+      }
+      x += bw;
+    }
+    y += bh;
+  }
+}
 
 // ---------------- Cenários I e II: a câmara das sombras e o salão do fogo
-const CH = { W: 1040, floor: 182, rings: [44, 105, 175, 240], ringY: 140, wallTop: 98, wallEnd: 480, fireX: 890, fireY: 139, exitX: 1012 };
+const CH = { W: 1040, floor: 182, rings: [44, 105, 175, 240], ringY: 140, wallTop: 80, wallEnd: 480, fireX: 890, fireY: 169, exitX: 1012, lampX: 538, lampY: 67 };
 const PRIS = { mistico: 70, code: 140, arrogante: 210 };
-const STATUES = [ { k: 'shield', x: 652 }, { k: 'horse', x: 708 }, { k: 'spear', x: 768 }, { k: 'tree', x: 828 }, { k: 'bird', x: 952 } ];
+// Estátuas: x; y = topo do pedestal (onde ela pisa); hw = meia largura do nicho escavado atrás dela; iy = altura do ícone de inspeção.
+const STATUES = [ { k: 'shield', x: 652, y: 132, hw: 22, iy: 62 }, { k: 'horse', x: 708, y: 132, hw: 30, iy: 80 }, { k: 'spear', x: 768, y: 142, hw: 20, iy: 64 },
+  { k: 'tree', x: 822, y: 142, hw: 28, iy: 69 }, { k: 'bird', x: 952, y: 118, iy: 79 } ];
 const SHADOWS = [ { k: 'shield', x: 252, b: 179 }, { k: 'horse', x: 312, b: 179 }, { k: 'spear', x: 364, b: 182 }, { k: 'tree', x: 410, b: 181 }, { k: 'bird', x: 458, b: 146 } ];
+const HALL_SHROOMS = [[490, 1], [495, 0], [997, 0], [1002, 1]];   // cogumelos luminosos no chão: [x, grande?]
+// Perfil do que foi talhado no salão: a passarela das estátuas desce em dois patamares e uma escada até o estrado da fogueira.
+function hallTop(x) { return x < 616 ? 999 : x < 744 ? 140 : x < 852 ? 150 : x < 859 ? 157 : x < 866 ? 164 : x < 916 ? 170 : x < 923 ? 174 : x < 930 ? 178 : 999; }
+// cabeça de estátua quebrada, largada no chão
+function stoneHead(g, x, y, P) {
+  const Hx = P.hex; rect(g, x, y - 8, 9, 8, Hx[0]); rect(g, x + 1, y - 9, 6, 1, Hx[0]); rect(g, x + 1, y - 8, 7, 7, Hx[3]); rect(g, x + 1, y - 8, 7, 1, Hx[5]);
+  rect(g, x + 6, y - 7, 2, 5, Hx[4]); rect(g, x + 1, y - 7, 2, 6, Hx[2]); rect(g, x + 5, y - 6, 2, 1, Hx[0]); rect(g, x + 8, y - 5, 2, 2, Hx[0]); rect(g, x + 8, y - 5, 1, 1, Hx[4]); rect(g, x + 5, y - 3, 3, 1, Hx[1]); rect(g, x + 1, y - 2, 3, 1, Hx[0]);
+}
 
 function buildChamber() {
-  const WW = CH.W, [c, g] = mk(WW, H), R = rng(7);
-  rect(g, 0, 0, WW, H, '#07040a');
-  for (let i = 0; i < 360; i++) { const x = R() * WW, y = 20 + R() * 160, rr = 7 + R() * 16; boulder(g, x, y, rr, rr * .8, ROCK_DIM, R); }
-  const gr = g.createLinearGradient(0, 0, 0, 110); gr.addColorStop(0, 'rgba(3,1,6,.97)'); gr.addColorStop(.65, 'rgba(3,1,6,.7)'); gr.addColorStop(1, 'rgba(3,1,6,.1)');
-  g.fillStyle = gr; g.fillRect(0, 0, WW, 110);
-  // cachos de rocha no alto, como na referência
-  for (let i = 0; i < 24; i++) boulder(g, R() * 70 - 10, R() * 84, 9 + R() * 9, 7 + R() * 6, ROCK_MID, R);
-  for (let i = 0; i < 14; i++) boulder(g, 300 + R() * 180, R() * 26, 10 + R() * 10, 7 + R() * 6, ROCK_MID, R);
-  // montes de pedra atrás do muro
-  for (const mx of [110, 250, 345, 440]) for (let i = 0; i < 11; i++) { const a = R() * Math.PI; boulder(g, mx + Math.cos(a) * 32 * R(), 96 - Math.sin(a) * 20 * R(), 7 + R() * 7, 6 + R() * 4, ROCK_MID, R); }
-  // o muro das sombras
-  brickWall(g, 0, CH.wallTop, CH.wallEnd, CH.floor - CH.wallTop, R, BRICK, 13, 7, 9);
-  let x = 0;
-  while (x < CH.wallEnd) { const w = 16 + ((R() * 8) | 0); rect(g, x, CH.wallTop - 5, w, 6, '#140c12'); rect(g, x + 1, CH.wallTop - 4, w - 2, 4, '#5e4c4e'); rect(g, x + 1, CH.wallTop - 4, w - 2, 1, '#7e6a68'); rect(g, x + 1, CH.wallTop - 1, w - 2, 1, '#3a2e30'); x += w; }
-  for (let y = CH.wallTop - 4; y < CH.floor; y += 8) boulder(g, CH.wallEnd + 2 + R() * 4, y, 5 + R() * 3, 5, ROCK, R);
-  for (const rx of CH.rings) ringPlate(g, rx, CH.ringY);
-  // salão das estátuas: fundo de grandes blocos
-  brickWall(g, 490, 64, WW - 490, CH.floor - 64, R, BLOCK, 20, 12, 12);
-  const g2 = g.createLinearGradient(0, 40, 0, 140); g2.addColorStop(0, 'rgba(3,1,6,.96)'); g2.addColorStop(1, 'rgba(3,1,6,0)');
-  g.fillStyle = g2; g.fillRect(490, 40, WW - 490, 100);
-  for (let i = 0; i < 44; i++) boulder(g, 490 + R() * (WW - 490), R() * 36, 9 + R() * 12, 7 + R() * 7, ROCK_MID, R);
-  for (let x2 = 934; x2 < 996; x2++) { const y = 5 + Math.round(Math.sin(x2 * .23) * 2 + Math.sin(x2 * .61)); rect(g, x2, y - 1, 1, 4, '#3a2418'); rect(g, x2, y, 1, 2, x2 % 3 ? '#ffe0a0' : '#f0b860'); }
-  column(g, 500, 46, 20, 136, R); column(g, 556, 46, 20, 136, R); column(g, 598, 130, 18, 52, R);
-  for (let i = 0; i < 6; i++) boulder(g, 594 + R() * 26, 128 - R() * 4, 3 + R() * 3, 2 + R() * 2, ROCK, R);
-  // parapeito com pedestais e estátuas
-  rect(g, 616, 146, 358, 5, '#140c12'); rect(g, 617, 147, 356, 3, '#6a565c'); rect(g, 617, 147, 356, 1, '#8a767c');
-  brickWall(g, 618, 151, 354, CH.floor - 151, R, BLOCK, 18, 10, 10);
-  for (const s of STATUES) {
-    const spr = S.statue[s.k], pw = Math.max(18, Math.round(spr.width * .5));
-    rect(g, s.x - pw / 2 - 2, 138, pw + 4, 4, '#140c12'); rect(g, s.x - pw / 2 - 1, 139, pw + 2, 2, '#86727a');
-    rect(g, s.x - pw / 2 - 1, 141, pw + 2, 6, '#140c12'); rect(g, s.x - pw / 2, 141, pw, 5, '#5d4a52'); rect(g, s.x + pw / 2 - 3, 141, 3, 5, '#3c2e36');
-    g.drawImage(spr, Math.round(s.x - spr.width / 2), 139 - (spr.height - 6));
+  const WW = CH.W, F = CH.floor, pix = new Pix(WW, H), R = rng(7), R2 = rng(70), fx = CH.fireX;
+  const stal = spikeRow(R, 0, WW, 12, 34, 5, 30, 3, 5), ceil = new Float32Array(WW), lip = new Float32Array(WW);
+  for (let x = 0; x < WW; x++) {
+    ceil[x] = x > 938 && x < 992 ? 0 : (x < 484 ? 30 : 20) + jag(x, 34, 9, 1) + jag(x, 9, 2.5, 2) + spikeAt(stal, x) * (x < 484 ? 1 : x < 600 ? .35 : .6);
+    lip[x] = CH.wallTop + jag(x, 41, 4, 3) + jag(x, 11, 1.5, 4);
   }
-  // braseiro sobre degraus
-  const fx = CH.fireX;
-  const step = (x0, y0, w, h) => { rect(g, x0, y0, w, h, '#140c12'); rect(g, x0 + 1, y0 + 1, w - 2, h - 1, '#4f3e46'); rect(g, x0 + 1, y0 + 1, w - 2, 1, '#7a646c'); rect(g, x0 + w - 4, y0 + 2, 3, h - 2, '#33282e'); };
-  step(fx - 30, 172, 60, 10); step(fx - 24, 163, 48, 10); step(fx - 18, 156, 36, 8);
-  rect(g, fx - 6, 148, 12, 8, '#140c12'); rect(g, fx - 5, 148, 10, 8, '#3d3036'); rect(g, fx - 5, 148, 3, 8, '#5a4a50');
-  for (let i = 0; i < 8; i++) rect(g, fx - 18 + i, 140 + i, 36 - 2 * i, 1, i === 0 ? '#8a767c' : i < 3 ? '#5a4a50' : '#40343a');
-  rect(g, fx - 19, 138, 38, 3, '#140c12'); rect(g, fx - 18, 139, 36, 1, '#9a8288');
-  amphora(g, 532, 182); amphora(g, 640, 182); amphora(g, 992, 182);
-  for (let i = 0; i < 28; i++) boulder(g, 620 + R() * 360, 179 + R() * 2, 2 + R() * 3, 2 + R() * 1.5, ROCK, R);
-  // passagem de saída
-  ell(g, 1030, 138, 20, 46, '#140c12'); ell(g, 1030, 140, 17, 43, '#020104');
-  for (let a = Math.PI * .55; a < Math.PI * 1.5; a += .2) boulder(g, 1030 + Math.cos(a) * 21, 138 + Math.sin(a) * 46, 5 + R() * 3, 4 + R() * 2, ROCK, R);
-  // chão: meio-fio de lajes e pedras redondas
-  curb(g, 0, WW, CH.floor, R);
-  for (let x2 = -6; x2 < WW + 6; x2 += 9 + R() * 6) boulder(g, x2, 198 + R() * 5, 7 + R() * 5, 6 + R() * 3, ROCK, R);
-  for (let x2 = -6; x2 < WW + 6; x2 += 10 + R() * 6) boulder(g, x2, 212 + R() * 4, 7 + R() * 5, 5 + R() * 3, ROCK_MID, R);
-  const g3 = g.createLinearGradient(0, 196, 0, 216); g3.addColorStop(0, 'rgba(3,1,6,0)'); g3.addColorStop(1, 'rgba(3,1,6,.8)'); g.fillStyle = g3; g.fillRect(0, 196, WW, 20);
+  const corner = y => 486 + jag(y, 13, 3, 5), inX = (x, a, b) => x >= a && x < b;
+  // A rocha do salão muda de cor com a distância do fogo: brasa → marrom → malva → roxo frio, em transições pontilhadas
+  // (o mesmo recurso da boca da caverna). Longe do fogo ela é a mesma pedra roxa das outras fases.
+  const warm = (x, y) => { const d = Math.hypot(x - fx, (y - 150) * 1.2) + (bay(x, y) - .5) * 46; return d < 92 ? RK.lit : d < 215 ? RK.wall : d < 360 ? RK.hall : RK.cave; };
+  const hx = (x, y) => warm(x, y).hex;
+  // nichos escavados na parede, um atrás de cada estátua: o fundo escuro faz a pedra clara saltar
+  for (const s of STATUES) if (s.hw) s.nt = s.y - (S.statue[s.k].height - 12) - 9;
+  const niche = (x, y) => { for (const s of STATUES) { if (!s.hw || y < s.nt || y >= hallTop(s.x)) continue; const t = y - s.nt; if (Math.abs(x - s.x) < (t < 9 ? s.hw * (.5 + .5 * t / 9) : s.hw) + jag(y, 5, 1.2, s.x)) return true; } return false; };
+  // pórtico em ruínas (duas colunas, lintel e meio frontão), coluna quebrada e o pilar natural onde pousa o pássaro
+  const gate = (x, y) => {
+    if (y < 36) return false;
+    if (y < 46) return x >= 497 + (46 - y) * 4 && x < 551 + jag(y, 3, 3, 33);
+    if (y < 58) return inX(x, 493, 583);
+    if (y < 64 || y >= F - 6) return inX(x, 497, 523) || inX(x, 553, 579);
+    return inX(x, 500, 520) || inX(x, 556, 576);
+  };
+  const stump = (x, y) => (inX(x, 594, 610) && y >= 141 + jag(x, 4, 3, 37)) || (inX(x, 592, 612) && y >= F - 5);
+  const perch = (x, y) => y >= 118 && Math.abs(x - 952) < (y < 121 ? 7 : 4 + (y - 118) * .11 + jag(y, 9, 1.5, 39));
+  const built = (x, y) => y < F && (y >= hallTop(x) || gate(x, y) || stump(x, y) || perch(x, y));
+  // 1. rocha recuada, no escuro  2. o paredão das sombras: liso, talhado  3. fundo do salão, com os nichos
+  // 4. tudo o que foi talhado no salão  5. teto com estalactites  6. chão (aquecido perto do fogo)
+  terrain(pix, () => true, { ramp: RK.far, cw: 22, ch: 12, seed: 3, lx: 1, contrast: .8, deep: 0 });
+  terrain(pix, (x, y) => x < corner(y) && y >= lip[x], { ramp: RK.wall, cw: 34, ch: 15, seed: 5, lx: 1, contrast: .4, edge: .5, deep: 0, x1: 494 });
+  terrain(pix, (x, y) => x >= corner(y) && y >= 44 + jag(x, 37, 5, 8) && !niche(x, y), { rampAt: warm, cw: 19, ch: 10, seed: 9, lx: 1, contrast: .9, deep: 0, x0: 480 });
+  terrain(pix, built, { rampAt: (x, y) => x < 612 ? RK.hall : warm(x, y), cw: 11, ch: 7, seed: 15, lx: 1, deep: 11, x0: 484 });
+  terrain(pix, (x, y) => y < ceil[x], { ramp: RK.cave, cw: 15, ch: 9, seed: 11, lx: 1, deep: 8, y1: 112 });
+  terrain(pix, (x, y) => y >= F, { rampAt: (x, y) => x > 620 && Math.abs(x - fx) + (bay(x, y) - .5) * 44 < 84 ? RK.lit : RK.floor, cw: 30, ch: 9, seed: 13, lx: 1, contrast: .4, edge: .6, deep: 18, y0: F });
+  const [c, g] = pix.done(), WH = RK.wall.hex, HH = RK.hall.hex;
+
+  // ---------- Fase 1: estratos, marcas de picareta e rachaduras (caverna escavada, sem pedras empilhadas)
+  for (const [y0, s] of [[104, 31], [128, 32], [156, 33]]) for (let x = 0; x < 482; x++) if (hash2(x >> 3, s, 1) < .7) rect(g, x, y0 + Math.round(jag(x, 57, 3, s)), 1, 1, WH[1]);
+  for (let i = 0; i < 120; i++) {
+    const x = (R() * 474) | 0, y = lip[x] + 6 + R() * (F - lip[x] - 14), n = 2 + ((R() * 3) | 0), dir = R() < .7 ? 1 : -1;
+    for (let k = 0; k < n; k++) { rect(g, x + k * dir, y + k, 1, 1, WH[1]); if (k) rect(g, x + k * dir, y + k - 1, 1, 1, WH[4]); }
+  }
+  for (let i = 0; i < 7; i++) { const x = 20 + ((R() * 450) | 0); crack(g, x, Math.round(lip[x]) + 1, 10 + R() * 30, WH[0], R); }
+  for (const rx of CH.rings) ringPlate(g, rx, CH.ringY);
+  for (const [x, w, h] of [[16, 7, 16], [290, 6, 11], [300, 9, 22], [468, 8, 19], [478, 5, 10]]) spike(g, x, F, w, h, RK.wall, -1, R);
+
+  // ---------- Fase 2: o salão dos fazedores de sombras
+  // marcas de ferramenta no fundo
+  for (let i = 0; i < 70; i++) {
+    const x = 500 + ((R2() * 520) | 0), y = (52 + R2() * 84) | 0, n = 2 + ((R2() * 3) | 0); if (niche(x, y) || built(x, y)) continue;
+    const Hc = hx(x, y); for (let k = 0; k < n; k++) rect(g, x + k, y + k, 1, 1, Hc[1]);
+  }
+  // fenda no teto por onde a fumaça sai e a luz do dia entra; a vida já desce por ela (musgo e cipós)
+  for (let x = 940; x < 990; x++) { const y = 3 + Math.round(jag(x, 6, 2.5, 21)), th = 2 + (hash2(x, 3, 4) < .4 ? 1 : 0); rect(g, x, 0, 1, y, '#1c1210'); rect(g, x, y - 1, 1, th + 2, '#4a2c18'); rect(g, x, y, 1, th, x % 3 ? '#ffe6a8' : '#f4bc64'); }
+  for (let x = 936; x < 994; x += 2) if (R2() < .6) rect(g, x, 7 + ((R2() * 3) | 0), 2, 1, MOSS[1 + ((R2() * 2) | 0)]);
+  for (const [vx, len] of [[944, 12], [957, 24], [969, 15], [986, 19]]) vine(g, vx, 6, len, R2);
+  // pórtico: juntas dos tambores, caneluras, capitéis, entalhes do lintel, corrente da lanterna
+  for (const cx0 of [500, 556]) {
+    for (let y = 77; y < F - 8; y += 14) { rect(g, cx0, y, 20, 1, HH[0]); rect(g, cx0 + 1, y + 1, 18, 1, HH[4]); }
+    for (const dx of [5, 10, 15]) for (let y = 66; y < F - 8; y += 2) rect(g, cx0 + dx, y, 1, 1, HH[1]);
+    rect(g, cx0 - 3, 58, 26, 1, HH[5]); rect(g, cx0 - 3, 63, 26, 1, HH[0]); rect(g, cx0 - 3, F - 6, 26, 1, HH[5]);
+    crack(g, cx0 + 3 + ((R2() * 12) | 0), 70 + ((R2() * 40) | 0), 14 + R2() * 16, HH[0], R2);
+  }
+  rect(g, 493, 46, 90, 1, HH[5]); rect(g, 493, 56, 90, 1, HH[1]); for (let x = 499; x < 580; x += 9) rect(g, x, 49, 2, 5, HH[1]);
+  for (let y = 58; y < CH.lampY; y += 2) rect(g, CH.lampX, y, 1, 1, '#8d93a0');
+  stoneHead(g, 580, F + 1, RK.hall); for (let i = 0; i < 5; i++) chip(g, 590 + ((R2() * 22) | 0), F + 1, 3 + ((R2() * 4) | 0), 2 + ((R2() * 3) | 0), RK.hall);
+  // passarela: lajes de arremate e friso entalhado em grega
+  for (const [x0, x1, top] of [[616, 744, 140], [744, 852, 150]]) {
+    let x = x0; while (x < x1) { const w = Math.min(x1 - x, 13 + ((R2() * 9) | 0)), Hc = hx(x, top); rect(g, x, top, w, 3, Hc[4]); rect(g, x, top, w, 1, Hc[5]); rect(g, x + w - 1, top, 1, 3, Hc[1]); rect(g, x, top + 3, w, 1, Hc[0]); x += w; }
+    for (x = x0 + 5; x + 7 <= x1 - 3; x += 8) { const col = hx(x, top + 9)[1], y = top + 7; rect(g, x, y, 6, 1, col); rect(g, x, y, 1, 5, col); rect(g, x, y + 4, 5, 1, col); rect(g, x + 4, y + 2, 1, 2, col); rect(g, x + 2, y + 2, 3, 1, col); }
+  }
+  // pedestais e estátuas (o pássaro pousa direto no topo do pilar)
+  for (const s of STATUES) {
+    const spr = S.statue[s.k], pw = Math.max(18, Math.round(spr.width * .5)), Hc = hx(s.x, s.y), hh = hallTop(s.x) - s.y - 2, xa = Math.round(s.x - pw / 2);
+    if (s.hw) { rect(g, xa - 2, s.y, pw + 4, 3, Hc[0]); rect(g, xa - 1, s.y, pw + 2, 2, Hc[5]); rect(g, xa - 1, s.y + 2, pw + 2, hh, Hc[0]); rect(g, xa, s.y + 2, pw, hh, Hc[3]); rect(g, xa, s.y + 2, 3, hh, Hc[1]); rect(g, xa + pw - 2, s.y + 2, 2, hh, Hc[4]); }
+    if (s.x > fx) { g.save(); g.translate(s.x * 2, 0); g.scale(-1, 1); }   // à direita do fogo a estátua é espelhada: o lado claro fica virado para a chama
+    g.drawImage(spr, Math.round(s.x - spr.width / 2), s.y - (spr.height - 6));
+    if (s.x > fx) g.restore();
+  }
+  // a fogueira: leito de cinzas, anel de pedras, toras cruzadas e brasas
+  rect(g, fx - 12, 167, 24, 3, '#1c1210');
+  for (let i = -15; i <= 12; i += 5) chip(g, fx + i, 171, 5, 3 + (i & 1), RK.lit);
+  thick(g, fx - 12, 168, fx + 3, 158, 3, 3, '#24140c'); thick(g, fx + 12, 168, fx - 3, 158, 3, 3, '#24140c');
+  thick(g, fx - 12, 167, fx + 3, 157, 1, 1, '#7a5030'); thick(g, fx + 12, 167, fx - 3, 157, 1, 1, '#6a4428');
+  rect(g, fx - 10, 165, 20, 3, '#24140c'); rect(g, fx - 10, 165, 20, 1, '#7a5030'); rect(g, fx + 8, 165, 2, 3, '#b8864e');
+  for (let i = -8; i < 9; i += 4) rect(g, fx + i, 168, 2, 1, '#e0602a');
+  amphora(g, 532, F); amphora(g, 630, F); amphora(g, 978, F);
+  for (const [x, big] of HALL_SHROOMS) shroom(g, x, F, big);
+  for (let i = 0; i < 26; i++) chip(g, 20 + ((R2() * 1000) | 0), F + 1, 2 + ((R2() * 4) | 0), 1 + ((R2() * 3) | 0), RK.floor);
+  // passagem de saída: arco irregular talhado na rocha, já com musgo e cipós
+  polyFill(g, [[1007, F], [1005, 150], [1008, 121], [1015, 101], [1027, 91], [1040, 88], [1040, F]], HH[0]);
+  polyFill(g, [[1012, F], [1010, 151], [1013, 124], [1019, 106], [1029, 97], [1040, 94], [1040, F]], '#020104');
+  for (const [x, y, w, h] of [[1003, 168, 7, 10], [1002, 150, 6, 10], [1004, 130, 6, 9], [1008, 110, 7, 9], [1017, 95, 8, 7]]) { rect(g, x, y, w, h, HH[0]); rect(g, x + 1, y + 1, w - 2, h - 2, HH[3]); rect(g, x + 1, y + 1, w - 2, 1, HH[5]); rect(g, x + 1, y + h - 2, w - 2, 1, HH[1]); }
+  for (const [x, y, w] of [[1004, 129, 5], [1008, 109, 6], [1018, 94, 7]]) { rect(g, x, y, w, 2, MOSS[1]); rect(g, x + 1, y, w - 2, 1, MOSS[2]); }
+  vine(g, 1026, 97, 15, R2); vine(g, 1035, 95, 9, R2);
+  // profundidade: véu pontilhado de escuro no alto e no rodapé
+  veil(g, 0, 0, WW, 50, '#05030a', (x, y) => .55 - y / 44);
+  veil(g, 0, F + 16, WW, H - F - 16, '#05030a', (x, y) => (y - F - 16) / 40);
   return c;
+}
+// primeiro plano da câmara: pontas quase pretas no alto e no rodapé, com paralaxe mais rápida (profundidade)
+function buildChamberFg() {
+  const w = Math.ceil(W + (CH.W - W) * 1.25), pix = new Pix(w, H), R = rng(81), BK = ramp('#020104', '#040208', '#06040b', '#09050f', '#0c0714', '#130b1e');
+  const dn = spikeRow(R, 60, w, 70, 120, 12, 26, 7, 6), up = spikeRow(R, 30, w, 110, 160, 5, 9, 10, 8);
+  terrain(pix, (x, y) => y < 2 + spikeAt(dn, x) + jag(x, 17, 2, 82) || y > H - 2 - spikeAt(up, x), { ramp: BK, cw: 14, ch: 9, seed: 83, lx: 1, deep: 6 });
+  return pix.done()[0];
 }
 
-// ---------------- Cenário III: o parkour
-const PK = { W: 1100, death: 198, exitX: 1068 };
+// ---------------- Cenário III: a ascensão no escuro
+const PK = { W: 1100, H: 360, death: 338, exitX: 1062, base: 300, top: 92 };
 const PK_SOLIDS = [
-  { x: 0,   y: 150, w: 120, h: 66 },
-  { x: 150, y: 140, w: 46,  h: 10, f: 1, moss: [.3, 1] },
-  { x: 226, y: 116, w: 40,  h: 10, f: 1, moss: [0, .6] },
-  { x: 296, y: 150, w: 40,  h: 66 },
-  { x: 474, y: 104, w: 40,  h: 10, f: 1, moss: [.2, .9] },
-  { x: 544, y: 84,  w: 36,  h: 10, f: 1 },
-  { x: 612, y: 132, w: 40,  h: 84, moss: [0, .5] },
-  { x: 756, y: 92,  w: 44,  h: 10, f: 1, moss: [.4, 1] },
-  { x: 832, y: 70,  w: 36,  h: 10, f: 1, moss: [0, .7] },
-  { x: 900, y: 56,  w: 200, h: 160, moss: [0, .3] },
+  { x: 0,   y: 300, w: 120, h: 80,  moss: [.5, 1],  sh: [[104, 1]] },
+  { x: 150, y: 288, w: 46,  h: 10, f: 1, moss: [.2, 1],  sh: [[8, 0], [36, 1]] },
+  { x: 226, y: 262, w: 40,  h: 10, f: 1, moss: [0, .7],  sh: [[31, 0]] },
+  { x: 296, y: 284, w: 40,  h: 90,  moss: [.1, .8], sh: [[6, 1]] },
+  { x: 474, y: 236, w: 40,  h: 10, f: 1, moss: [.2, .9], sh: [[6, 0], [32, 1]] },
+  { x: 544, y: 212, w: 36,  h: 10, f: 1, moss: [0, .6],  sh: [[29, 0]] },
+  { x: 612, y: 230, w: 40,  h: 140, moss: [0, .5],  sh: [[35, 0]] },
+  { x: 756, y: 140, w: 44,  h: 10, f: 1, moss: [.3, 1],  sh: [[6, 1]] },
+  { x: 832, y: 114, w: 36,  h: 10, f: 1, moss: [0, .7],  sh: [[29, 0]] },
+  { x: 900, y: 92,  w: 200, h: 280, moss: [0, .5],  sh: [[9, 1], [148, 1], [155, 0]] },
 ];
+const PK_CEIL = { x: 820, y: -100, w: 280, h: 112 };   // teto baixo sobre o último trecho
 const MOVERS_DEF = [
-  { x: 360, y: 128, w: 40, h: 10, ax: 'x', a: 360, b: 426, per: 3.6 },
-  { x: 684, y: 130, w: 40, h: 10, ax: 'y', a: 100, b: 160, per: 3.4 },
+  { x: 360, y: 262, w: 40, h: 10, ax: 'x', a: 360, b: 426, per: 3.6 },
+  { x: 684, y: 226, w: 40, h: 10, ax: 'y', a: 150, b: 226, per: 4.2 },
 ];
-function moss(g, x0, x1, y, R) {
-  for (let x = Math.round(x0); x < x1; x++) {
-    rect(g, x, y - 1, 1, 2, '#a3b84e'); if (R() < .3) rect(g, x, y - 2, 1, 1, '#c4d468');
-    if (R() < .7) rect(g, x, y + 1, 1, 1 + ((R() * 3) | 0), '#71892e');
-    if (R() < .25) rect(g, x, y + 1, 1, 3 + ((R() * 9) | 0), '#55691f');
-  }
-}
-function platformArt(g, s, R) {
-  const bottom = s.f ? s.y + s.h + 1 : Math.min(H + 4, s.y + s.h + 4);
-  for (let yy = s.y + 7; yy < bottom; yy += 7)
-    for (let xx = s.x + 3; xx < s.x + s.w; xx += 7 + R() * 4) boulder(g, xx + R() * 2, yy + R() * 2, 4 + R() * 3, 4 + R() * 2, ROCK, R);
-  if (s.f) for (let xx = s.x + 4; xx < s.x + s.w - 2; xx += 5 + R() * 6) spikeDown(g, xx, s.y + s.h + 1, 4 + R() * 3, 4 + R() * 10, ROCK_SPK);
-  let xx = s.x;
-  while (xx < s.x + s.w) {
-    const bw = Math.min(7 + ((R() * 6) | 0), s.x + s.w - xx);
-    rect(g, xx, s.y, bw, 6, ROCK.out);
-    if (bw > 2) { rect(g, xx + 1, s.y + 1, bw - 2, 4, ROCK.hi); rect(g, xx + 1, s.y + 1, bw - 2, 1, ROCK.hi2); rect(g, xx + 1, s.y + 4, bw - 2, 1, ROCK.base); }
-    xx += bw;
-  }
-  if (s.moss) moss(g, s.x + s.moss[0] * s.w, s.x + s.moss[1] * s.w, s.y, R);
-}
+// plataforma solta: topo reto (onde se pisa), barriga irregular com pontas pendentes
+const slabDepth = (xx, w, seed, hang) => Math.max(3, (6 + jag(xx, 7, 2, seed) + spikeAt(hang, xx)) * Math.min(1, (Math.min(xx, w - 1 - xx) + 2.5) / 6));
 function buildParkourBg() {
-  const w = Math.ceil(W + (PK.W - W) * .5), [c, g] = mk(w, H), R = rng(19);
-  rect(g, 0, 0, w, H, '#0a0610');
-  for (let i = 0; i < 80; i++) boulder(g, R() * w, R() * H, 10 + R() * 16, 8 + R() * 12, ROCK_DIM, R);
-  for (let i = 0; i < 36; i++) spikeUp(g, R() * w, H + 4, 14 + R() * 22, 60 + R() * 120, { out: '#0b0710', base: i % 2 ? '#191120' : '#1e1526', hi: '#2a1f33', shade: '#130d19' });
-  for (let i = 0; i < 22; i++) spikeDown(g, R() * w, 0, 10 + R() * 16, 30 + R() * 50, { out: '#0b0710', base: '#1a1222', hi: '#241a2c', shade: '#130d19' });
-  const hz = g.createLinearGradient(0, 80, 0, H); hz.addColorStop(0, 'rgba(70,36,40,0)'); hz.addColorStop(1, 'rgba(70,36,40,.32)');
-  g.fillStyle = hz; g.fillRect(0, 80, w, H - 80);
-  return c;
+  const w = Math.ceil(W + (PK.W - W) * .5), h = Math.ceil(H + (PK.H - H) * .5), pix = new Pix(w, h), R = rng(19);
+  terrain(pix, () => true, { ramp: RK.far, cw: 26, ch: 14, seed: 17, lx: 1, contrast: .7, deep: 0 });
+  const up = spikeRow(R, 0, w, 26, 60, 40, 150, 9, 14), dn = spikeRow(R, 0, w, 22, 50, 20, 90, 7, 10), top = new Float32Array(w), bot = new Float32Array(w);
+  for (let x = 0; x < w; x++) { top[x] = 6 + spikeAt(dn, x) + jag(x, 11, 2, 4); bot[x] = h - 12 - spikeAt(up, x) + jag(x, 9, 2, 3); }
+  terrain(pix, (x, y) => y > bot[x] || y < top[x], { ramp: RK.mid, cw: 16, ch: 10, seed: 19, lx: 1, deep: 10 });
+  return pix.done()[0];
 }
 function buildParkour() {
-  const WW = PK.W, [c, g] = mk(WW, H), R = rng(21);
-  for (let y = 0; y < H; y += 9) boulder(g, 3 + R() * 6, y, 8 + R() * 4, 6 + R() * 3, ROCK, R);
-  for (let x = -8; x < WW + 8; x += 9 + R() * 7) { if (Math.abs(x - 254) < 18 || Math.abs(x - 724) < 18) continue; boulder(g, x, 4 + R() * 7, 9 + R() * 6, 7 + R() * 4, ROCK, R); }
-  for (const hx of [254, 724]) { ell(g, hx, 0, 15, 9, '#e8a050'); ell(g, hx, 0, 12, 7, '#ffd890'); ell(g, hx, 0, 8, 4, '#fff2c8'); }
-  thick(g, 252, 0, 247, 8, 2, 1, '#2a1a14'); thick(g, 247, 6, 240, 10, 1, 1, '#2a1a14'); thick(g, 257, 0, 263, 7, 1, 1, '#2a1a14'); thick(g, 261, 5, 266, 8, 1, 1, '#2a1a14');
-  for (const hx of [254, 724]) for (const k of [-1, 1]) boulder(g, hx + k * 17, 6, 7, 6, ROCK, R);
-  for (let i = 0; i < 36; i++) { const x = 16 + R() * 1050; if (Math.abs(x - 254) < 22 || Math.abs(x - 724) < 22) continue; spikeDown(g, x, 12 + R() * 5, 5 + R() * 7, 8 + R() * 26, ROCK_SPK); }
-  for (let y = -4; y < 60; y += 8) boulder(g, 1095 + R() * 4, y, 7 + R() * 4, 6, ROCK, R);
-  const ex = 1084, ey = 30;
-  ell(g, ex, ey, 17, 26, '#1a0f0c'); ell(g, ex, ey, 15, 24, '#d88a3a'); ell(g, ex + 1, ey, 12, 21, '#f6c068'); ell(g, ex + 2, ey + 1, 9, 17, '#ffe2a0'); ell(g, ex + 3, ey + 1, 6, 12, '#fff6d8');
-  for (let a = Math.PI * .6; a < Math.PI * 1.45; a += .3) boulder(g, ex + Math.cos(a) * 17, ey + Math.sin(a) * 26, 4 + R() * 2, 4, ROCK, R);
-  for (let x = -4; x < WW; x += 7 + R() * 5) boulder(g, x, 212, 5 + R() * 3, 4, ROCK, R);
-  for (let x = 118; x < 902; x += 5 + R() * 3) spikeUp(g, x, 213, 5 + R() * 3, 10 + R() * 9, BONE);
-  for (const s of PK_SOLIDS) platformArt(g, s, R);
-  column(g, 14, 104, 14, 46, R); amphora(g, 62, 150); amphora(g, 946, 56); column(g, 1010, 28, 12, 28, R);
+  const WW = PK.W, HH = PK.H, pix = new Pix(WW, HH), R = rng(21), M2 = new Uint8Array(WW * HH);
+  const mark = (x, y) => { if (x >= 0 && y >= 0 && x < WW && y < HH) M2[(y | 0) * WW + (x | 0)] = 1; };
+  for (const s of PK_SOLIDS) {
+    const hang = spikeRow(R, 5, s.w - 3, 7, 9, 5, 15, 3, 3);
+    for (let x = s.x; x < s.x + s.w; x++) { const dp = s.f ? slabDepth(x - s.x, s.w, s.x, hang) : HH; for (let y = s.y; y < Math.min(HH, s.y + dp); y++) mark(x, y); }
+    if (!s.f) for (let y = s.y + 5; y < HH; y++) {   // laterais lascadas dos pilares (crescem só para fora)
+      const k = Math.min(1, (y - s.y - 5) / 10), bl = Math.max(0, Math.round((1.5 + jag(y, 11, 2, s.x + 1) + (y - s.y) * .03) * k)), br = Math.max(0, Math.round((1.5 + jag(y, 13, 2, s.x + 2) + (y - s.y) * .03) * k));
+      for (let q = 1; q <= bl; q++) mark(s.x - q, y); for (let q = 0; q < br; q++) mark(s.x + s.w + q, y);
+    }
+  }
+  const stal = spikeRow(R, 0, WW, 9, 22, 4, 24, 3, 4), ceil = new Float32Array(WW), pit = new Float32Array(WW);
+  for (let x = 0; x < WW; x++) { ceil[x] = 11 + jag(x, 29, 5, 31) + jag(x, 8, 2, 32) + spikeAt(stal, x) * (x > 880 ? .45 : 1); pit[x] = 351 + jag(x, 23, 3, 41); }
+  terrain(pix, (x, y) => M2[y * WW + x] || y < ceil[x] || y >= pit[x] || x < 6 + jag(y, 17, 3, 51) || x >= WW - 8 + jag(y, 19, 3, 52), { ramp: RK.cave, cw: 13, ch: 8, seed: 21, lx: 1, deep: 8 });
+  const [c, g] = pix.done(), CV = RK.cave.hex, T = PK.top;
+  // a passagem de saída, no alto: um arco escuro talhado na parede da direita (nenhuma luz do dia chega aqui)
+  polyFill(g, [[1066, T], [1064, T - 22], [1068, T - 38], [1078, T - 48], [1092, T - 52], [WW, T - 52], [WW, T]], CV[0]);
+  polyFill(g, [[1071, T], [1069, T - 21], [1073, T - 35], [1081, T - 44], [1093, T - 47], [WW, T - 47], [WW, T]], '#020104');
+  for (const [x, y, w, h] of [[1062, T - 11, 7, 11], [1061, T - 26, 7, 10], [1065, T - 40, 8, 9], [1075, T - 51, 9, 7]]) { rect(g, x, y, w, h, CV[0]); rect(g, x + 1, y + 1, w - 2, h - 2, CV[3]); rect(g, x + 1, y + 1, w - 2, 1, CV[5]); rect(g, x + 1, y + h - 2, w - 2, 1, CV[1]); }
+  vine(g, 1080, T - 46, 12, R); vine(g, 1090, T - 48, 8, R);
+  // musgo, cogumelos luminosos e cipós nas plataformas
+  PK.shrooms = [];
+  for (const s of PK_SOLIDS) {
+    if (s.f) for (let k = 0; k < 2; k++) if (R() < .75) vine(g, s.x + 6 + R() * (s.w - 12), s.y + 4, 9 + R() * 18, R);
+    if (s.moss) mossTop(g, s.x + s.moss[0] * s.w, s.x + s.moss[1] * s.w, s.y, R);
+    for (const [dx, big] of s.sh || []) { shroom(g, s.x + dx, s.y, big); PK.shrooms.push([s.x + dx, s.y, big]); }
+  }
+  // estacas no fundo do poço: escuras, tortas e desiguais
+  for (let x = 124; x < 898; x += 4 + R() * 5) {
+    if (PK_SOLIDS.some(s => !s.f && x > s.x - 6 && x < s.x + s.w + 6)) continue;
+    spike(g, x, Math.round(pit[x | 0]) + 2, 4 + R() * 4, 9 + R() * 13, RK.spike, -1, R);
+  }
+  amphora(g, 62, 300);
+  rect(g, 614, 202, 3, 28, '#140c10'); rect(g, 615, 203, 1, 27, '#4a3a3c'); rect(g, 614, 202, 9, 2, '#140c10'); rect(g, 612, 228, 7, 2, '#140c10');   // poste da lanterna
   return c;
 }
 function buildMover(m) {
-  const [c, g] = mk(m.w + 2, 26), R = rng(m.x);
-  platformArt(g, { x: 1, y: 0, w: m.w, h: m.h, f: 1, moss: [.3, .9] }, R);
-  rect(g, 4, 2, 2, 2, '#5a5f6c'); rect(g, m.w - 4, 2, 2, 2, '#5a5f6c');
+  const pix = new Pix(m.w + 4, 34), R = rng(m.x), hang = spikeRow(R, 5, m.w - 3, 7, 8, 5, 12, 3, 3);
+  terrain(pix, (x, y) => x >= 2 && x < m.w + 2 && y >= 5 && y < 5 + slabDepth(x - 2, m.w, m.x, hang), { ramp: RK.cave, cw: 11, ch: 7, seed: m.x, lx: 1, deep: 6 });
+  const [c, g] = pix.done(); mossTop(g, 2 + m.w * .15, 2 + m.w * .85, 5, R); shroom(g, m.w - 6, 5, false);
   return c;
 }
 
-// ---------------- Cenário IV: a boca da caverna
-const MOUTH = { W: 640, cx: 612, cy: 108, rx: 96, ry: 82, trig: 548 };
-function mouthEdge(a) { return 1 + .07 * Math.sin(a * 5 + 1) + .05 * Math.sin(a * 11 + 2) + .03 * Math.sin(a * 17); }
+// ---------------- Cenário IV: a entrada da caverna
+// Abertura larga e orgânica (contorno polar com ruído anguloso), lábio de estalactites, pedras ao pé.
+const MOUTH = { W: 640, cx: 598, cy: 114, rx: 152, ry: 98, trig: 566 };
+function mouthD(x, y) {
+  const dx = (x - MOUTH.cx) / MOUTH.rx, dy = (y - MOUTH.cy) / MOUTH.ry, a = Math.atan2(dy, dx) * 40;
+  return Math.hypot(dx, dy) / (1 + jag(a, 9, .1, 71) + jag(a, 3.5, .035, 72));
+}
 function buildMouth() {
-  const [c, g] = mk(MOUTH.W, H), R = rng(33);
-  rect(g, 0, 0, MOUTH.W, H, '#09050d');
-  for (let i = 0; i < 320; i++) { const x = R() * MOUTH.W, y = R() * H, r = 7 + R() * 15; boulder(g, x, y, r, r * .8, i < 160 ? ROCK_DIM : ROCK, R); }
-  for (let x = 0; x < MOUTH.W; x += 8 + R() * 8) spikeDown(g, x, 8 + R() * 10, 5 + R() * 6, 8 + R() * 22, ROCK_SPK);
-  for (let y = 0; y < H; y++) for (let x = 440; x < MOUTH.W; x++) {
-    const dx = (x - MOUTH.cx) / MOUTH.rx, dy = (y - MOUTH.cy) / MOUTH.ry, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
-    if (d < mouthEdge(a) && y < CH.floor) {
-      const hill = 150 + Math.sin(x * .05) * 5 + Math.sin(x * .017 + 1) * 7;
-      let col = d < .35 ? '#ffffff' : d < .6 ? '#fffbea' : d < .8 ? '#fff0bc' : '#ffd98c';
-      if (y > hill) col = y > hill + 8 ? '#cfe3a2' : '#e2efbe';
-      g.fillStyle = col; g.fillRect(x, y, 1, 1);
-    }
+  const WW = MOUTH.W, F = CH.floor, pix = new Pix(WW, H), R = rng(33);
+  const stal = spikeRow(R, 0, WW, 12, 26, 5, 30, 3, 5), big = spikeRow(R, 452, WW, 15, 24, 16, 44, 5, 6), mound = spikeRow(R, 400, 482, 8, 9, 8, 30, 6, 7);
+  const ceil = new Float32Array(WW), pile = new Float32Array(WW), DM = new Float32Array(WW * H);
+  for (let x = 0; x < WW; x++) { ceil[x] = 24 + jag(x, 31, 8, 61) + jag(x, 9, 2.5, 62) + spikeAt(stal, x) + spikeAt(big, x); pile[x] = spikeAt(mound, x); }
+  for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < WW; x++, i++) DM[i] = mouthD(x, y);
+  // a rocha esquenta de cor conforme chega perto da luz: transição pontilhada entre as rampas
+  const rampAt = (x, y) => { const d = DM[y * WW + x] + (bay(x, y) - .5) * .24; return d < 1.3 ? RK.lit : d < 1.8 ? RK.wall : d < 2.7 ? RK.cave : RK.mid; };
+  terrain(pix, (x, y) => DM[y * WW + x] >= 1 || y >= F, { rampAt, cw: 20, ch: 11, seed: 35, lx: 1, contrast: .8, deep: 0 });
+  terrain(pix, (x, y) => y < F && y >= F - pile[x], { rampAt, cw: 9, ch: 7, seed: 37, lx: 1, deep: 7 });
+  terrain(pix, (x, y) => y < ceil[x], { rampAt: (x, y) => DM[y * WW + x] < 1.22 ? RK.lit : RK.cave, cw: 14, ch: 9, seed: 39, lx: 1, deep: 7, y1: 130 });
+  terrain(pix, (x, y) => y >= F, { rampAt: (x, y) => { if (x > 506 + (bay(x, y) - .5) * 36) return RK.earth; const r = rampAt(x, F - 4); return r === RK.cave || r === RK.mid ? RK.floor : r; }, cw: 24, ch: 9, seed: 41, lx: 1, contrast: .5, deep: 9, y0: F });
+  const [c, g] = pix.done();
+  // musgo agarrado à borda da abertura
+  for (let a = Math.PI * .58; a < Math.PI * 1.45; a += .045 + R() * .05) {
+    let rr = 1; while (rr < 1.4 && mouthD(MOUTH.cx + Math.cos(a) * MOUTH.rx * rr, MOUTH.cy + Math.sin(a) * MOUTH.ry * rr) < 1.03) rr += .01;
+    const x = Math.round(MOUTH.cx + Math.cos(a) * MOUTH.rx * rr), y = Math.round(MOUTH.cy + Math.sin(a) * MOUTH.ry * rr);
+    if (y >= F - 2 || R() < .5) continue;
+    const mw = 2 + ((R() * 6) | 0); rect(g, x - mw, y, mw + 1, 2, MOSS[1]); rect(g, x - mw + 1, y, mw - 1, 1, MOSS[2]); if (R() < .4) rect(g, x - 1, y, 1, 1, MOSS[3]); if (R() < .5) rect(g, x - 1 - ((R() * mw) | 0), y + 2, 1, 1 + ((R() * 4) | 0), MOSS[0]);
   }
-  thick(g, 560, 150, 556, 120, 3, 2, '#d8d0b0'); ell(g, 556, 112, 12, 10, '#e4e8c4'); ell(g, 552, 108, 7, 6, '#eef2d6');
-  const lit = { out: '#140c10', shade: '#3a2a2c', base: '#5e4640', hi: '#a07656', hi2: '#d0a070' };
-  for (let a = Math.PI * .5; a < Math.PI * 1.5; a += .12) {
-    const e = mouthEdge(a);
-    boulder(g, MOUTH.cx + Math.cos(a) * MOUTH.rx * e - 3, MOUTH.cy + Math.sin(a) * MOUTH.ry * e, 6 + R() * 5, 5 + R() * 3, lit, R);
+  // cipós pendendo do lábio de cima, relva que entra pela soleira, a flor na fenda
+  for (let x = 470; x < WW; x += 8 + R() * 16) vine(g, x, Math.round(ceil[x | 0]) - 2, 8 + R() * 30, R);
+  for (let x = 484; x < WW; x++) {
+    const k = clamp((x - 484) / 70, 0, 1); if (R() > k) continue;
+    rect(g, x, F, 1, 2, '#74ae38'); rect(g, x, F + 2, 1, 1 + ((R() * 2) | 0), '#427c2c');
+    if (R() < .6) rect(g, x, F - 1 - ((R() * 3 * k) | 0), 1, 2, R() < .5 ? '#c2d84e' : '#74ae38');
   }
-  for (let a = Math.PI * .55; a < Math.PI * 1.45; a += .25) { const e = mouthEdge(a); moss(g, MOUTH.cx + Math.cos(a) * MOUTH.rx * e - 8, MOUTH.cx + Math.cos(a) * MOUTH.rx * e + 2, MOUTH.cy + Math.sin(a) * MOUTH.ry * e - 5, R); }
-  curb(g, 0, MOUTH.W, CH.floor, R);
-  for (let x = -6; x < MOUTH.W + 6; x += 9 + R() * 6) boulder(g, x, 198 + R() * 5, 7 + R() * 5, 6 + R() * 3, ROCK, R);
-  for (let x = -6; x < MOUTH.W + 6; x += 10 + R() * 6) boulder(g, x, 212 + R() * 4, 7 + R() * 5, 5 + R() * 3, ROCK_MID, R);
-  for (let x = 470; x < MOUTH.W; x += 3 + R() * 4) { const h = 2 + R() * 5; rect(g, x, CH.floor - h, 1, h, R() < .5 ? '#7aa83a' : '#a8c85a'); }
-  // a flor na fenda (ponto de inspeção)
+  for (let i = 0; i < 12; i++) chip(g, 380 + ((R() * 120) | 0), F + 1, 2 + ((R() * 4) | 0), 1 + ((R() * 3) | 0), RK.lit);
   rect(g, 446, 172, 1, 10, '#5a8a2e'); rect(g, 447, 176, 2, 1, '#5a8a2e');
   rect(g, 444, 170, 5, 3, '#f2e66a'); rect(g, 445, 169, 3, 5, '#f2e66a'); rect(g, 446, 171, 1, 1, '#d8762a');
+  veil(g, 0, F + 10, WW, H - F - 10, '#05030a', (x, y) => (y - F - 10) / 30 * (x < 500 ? 1 : .5), true);
   return c;
 }
+// primeiro plano: silhuetas quase pretas de estalactites e estalagmites (paralaxe mais rápida = profundidade)
+function buildMouthFg() {
+  const w = Math.ceil(W + (MOUTH.W - W) * 1.35), pix = new Pix(w, H), R = rng(77), BK = ramp('#020104', '#040208', '#06040b', '#09050f', '#0c0714', '#130b1e');
+  const up = spikeRow(R, 30, w * .6, 70, 90, 30, 70, 10, 10), dn = spikeRow(R, 0, w * .64, 36, 70, 30, 110, 9, 12);
+  terrain(pix, (x, y) => (x < w * .68 && y < 4 + spikeAt(dn, x) + jag(x, 13, 3, 78)) || y > H - 3 - spikeAt(up, x), { ramp: BK, cw: 14, ch: 9, seed: 79, lx: 1, deep: 6 });
+  return pix.done()[0];
+}
 
-// ---------------- Cenário V: o mundo exterior (camadas em paralaxe)
-const OUT = { W: 1500, ground: 168, edge: 1384, streamX: 830, streamW: 26 };
-const PAR = { far: .1, hills: .22, valley: .4, near: .65 };
-const VALLEY = { river: [], fall: { x: 676, y: 60, w: 16, h: 92 } };
+// ---------------- Cenário V: o mundo exterior (camadas em paralaxe, luz de fim de tarde)
+const OUT = { W: 1500, ground: 168, edge: 1384, edgeY: 122, streamX: 540, streamW: 26 };
+// Relevo do planalto: [x onde o patamar começa, altura do topo]. Degraus de até ~24 px se sobem pulando;
+// os paredões mais altos (CLIMBS) só se vencem escalando pelos cipós com E.
+const OUT_STEPS = [[-20, 168], [420, 150], [540, 174], [566, 150], [700, 92], [960, 122], [1100, 168], [1130, 122]];
+function outTop(x) { if (x >= OUT.edge) return 999; let y = 168; for (const s of OUT_STEPS) if (x >= s[0]) y = s[1]; return y; }
+const OUT_SOLIDS = OUT_STEPS.map((s, i) => ({ x: s[0], y: s[1], w: (i + 1 < OUT_STEPS.length ? OUT_STEPS[i + 1][0] : OUT.edge) - s[0], h: 420 }));
+const CLIMBS = [{ x: 700, top: 92, bot: 150 }, { x: 1130, top: 122, bot: 168 }];
+const PAR = { far: .1, hills: .22, valley: .4 };
+const VALLEY = { river: [[0, 157], [130, 155], [270, 157], [410, 154], [540, 156], [676, 154]], fall: { x: 676, y: 58, w: 16, h: 96 } };
 const layerW = f => Math.ceil(W + (OUT.W - W) * f) + 2;
-function cypress(g, x, base, h, R, P) {
-  rect(g, x - 1, base - 4, 2, 4, '#4a3020');
-  for (let y = 0; y < h; y++) {
-    const t = y / h, w = Math.max(1, Math.round(h * .17 * Math.pow(Math.sin(Math.PI * Math.min(1, (1 - t) * .95 + .05)), .7) * (1 - t * .25)));
-    const yy = base - 4 - y;
-    rect(g, x - w - 1, yy, 2 * w + 2, 1, P.out); rect(g, x - w, yy, 2 * w, 1, P.b); rect(g, x - w, yy, Math.max(1, Math.round(w * .6)), 1, P.hi);
-    if (R() < .3) rect(g, x + (R() * 2 - 1) * w, yy, 1, 1, P.sh);
+const SKY = ['#2c3684', '#3f3c94', '#58449e', '#7a4ea2', '#a45a9c', '#cc6a8c', '#ec8272', '#f9a05e', '#ffc062', '#ffdc86'];
+// pinheiro: camadas em dente de serra; cipreste: fuso estreito de borda recortada. O lado do sol fica claro.
+function pine(g, x, base, h, P, lx) {
+  const Hx = P.hex, n = h - 2, tiers = Math.max(2, Math.round(h / 7)), row = i => { const k = (i + 1) / n, ph = (i * tiers / n) % 1; return Math.round((.35 + .65 * ph) * k * h * .3); };
+  rect(g, x, base - 3, 1, 3, '#3a2418');
+  for (let i = 0; i < n; i++) rect(g, x - row(i) - 1, base - h + i, row(i) * 2 + 3, 1, Hx[0]);
+  for (let i = 0; i < n; i++) { const hw = row(i), y = base - h + i; rect(g, x - hw, y, hw * 2 + 1, 1, Hx[2]); if (hw) { rect(g, lx > 0 ? x + 1 : x - hw, y, hw, 1, Hx[3]); rect(g, lx > 0 ? x + hw : x - hw, y, 1, 1, Hx[5]); rect(g, lx > 0 ? x - hw : x + hw, y, 1, 1, Hx[1]); } }
+}
+function cypress(g, x, base, h, P, lx, seed) {
+  const Hx = P.hex, n = h - 3, row = i => { const k = i / n; return Math.max(0, Math.round(h * .13 * Math.min(1, k * 3.2, (1 - k) * 5 + .45) + (hash2(i, seed, 2) < .3 ? 1 : 0) - (hash2(i, seed, 3) < .2 ? 1 : 0))); };
+  rect(g, x, base - 3, 1, 3, '#3a2418');
+  for (let i = 0; i < n; i++) rect(g, x - row(i) - 1, base - 3 - n + i, row(i) * 2 + 3, 1, Hx[0]);
+  for (let i = 0; i < n; i++) {
+    const hw = row(i), y = base - 3 - n + i; rect(g, x - hw, y, hw * 2 + 1, 1, Hx[2]); if (!hw) continue;
+    rect(g, lx > 0 ? x + 1 : x - hw, y, hw, 1, Hx[3]); if (i % 3) rect(g, lx > 0 ? x + hw : x - hw, y, 1, 1, Hx[5]); rect(g, lx > 0 ? x - hw : x + hw, y, 1, 1, Hx[1]);
+    if (hash2(i, seed, 5) < .3) rect(g, x - hw + 1 + ((hash2(i, seed, 6) * hw * 2) | 0), y, 1, 1, Hx[1]);
   }
 }
 function flowerAt(g, x, y, kind) {
@@ -190,135 +309,181 @@ function flowerAt(g, x, y, kind) {
   else if (kind === 2) { rect(g, x, y + 1, 1, 3, '#3f8a32'); rect(g, x - 1, y - 1, 3, 2, '#e8463a'); rect(g, x, y - 1, 1, 1, '#2a1010'); }
   else { rect(g, x, y + 1, 1, 3, '#3f8a32'); rect(g, x, y - 1, 2, 2, '#ffd84a'); }
 }
-function bigTree(g, x, base, s, R) {
-  const BK = { out: '#2a160c', b: '#6b4428', hi: '#8e5e36', hi2: '#b07a48', sh: '#4a2c18' };
-  const th = Math.round(86 * s);
-  for (const [dx, dy] of [[-26, 2], [-14, 4], [12, 4], [26, 2], [-34, 0], [32, 0]]) thick(g, x, base - 6, x + dx * s, base + dy * .5, 6 * s, 2, BK.out);
-  for (const [dx, dy] of [[-26, 2], [-14, 4], [12, 4], [26, 2]]) thick(g, x, base - 7, x + dx * s, base + dy * .5 - 1, 4 * s, 1, BK.b);
-  for (let y = base; y > base - th; y--) {
-    const k = (base - y) / th, w = Math.round((24 - 10 * k) * s + (y > base - 10 ? (10 - (base - y)) * 1.2 : 0)), cx = x + Math.round(Math.sin(k * 2.4) * 6 * s);
-    rect(g, cx - w / 2 - 1, y, w + 2, 1, BK.out); rect(g, cx - w / 2, y, w, 1, BK.b); rect(g, cx - w / 2, y, Math.max(2, w * .3), 1, BK.hi); rect(g, cx - w / 2 + 1, y, 1, 1, BK.hi2); rect(g, cx + w / 2 - 3, y, 3, 1, BK.sh);
+function fence(g, x0, x1, base) {
+  rect(g, x0, base - 7, x1 - x0, 1, '#9a6a40'); rect(g, x0, base - 6, x1 - x0, 1, '#5e3a22'); rect(g, x0, base - 3, x1 - x0, 1, '#8a5c38');
+  for (let x = x0; x <= x1; x += 11) { rect(g, x - 1, base - 10, 4, 10, '#2a160c'); rect(g, x, base - 9, 2, 9, '#7a4c2c'); rect(g, x + 1, base - 9, 1, 9, '#a87444'); }
+}
+function cottage(g, x, base) {
+  const O = '#2a1620', Wl = '#e2b888', Ws = '#a87c66', Rf = '#b0503a', Rh = '#dc7e50', Rs = '#7a3430', Wn = '#ffd866';
+  rect(g, x - 15, base - 16, 30, 16, O); rect(g, x - 14, base - 15, 28, 15, Ws); rect(g, x - 14, base - 15, 17, 15, Wl);
+  for (let k = 0; k < 9; k++) { rect(g, x - 19 + k * 2, base - 17 - k, 38 - k * 4, 1, O); rect(g, x - 18 + k * 2, base - 17 - k, 36 - k * 4, 1, k ? Rf : Rs); rect(g, x - 18 + k * 2, base - 17 - k, 3, 1, Rh); }
+  rect(g, x - 11, base - 11, 5, 5, O); rect(g, x - 10, base - 10, 3, 3, Wn); rect(g, x + 6, base - 11, 5, 5, O); rect(g, x + 7, base - 10, 3, 3, Wn); rect(g, x - 2, base - 8, 4, 8, '#4a2a1e');
+  rect(g, x + 7, base - 29, 4, 7, O); rect(g, x + 8, base - 28, 2, 6, Ws);
+  // pórtico de colunas ao lado
+  rect(g, x + 18, base - 15, 24, 3, O); rect(g, x + 19, base - 14, 22, 1, '#f0dcc0');
+  for (let k = 0; k < 4; k++) { rect(g, x + 20 + k * 6, base - 12, 3, 12, O); rect(g, x + 21 + k * 6, base - 12, 1, 12, '#f0dcc0'); }
+  for (let k = 0; k < 4; k++) rect(g, x + 20 + k * 3, base - 16 - k, 20 - k * 6, 1, k === 3 ? O : Rf);
+}
+// cordilheira de arestas retas: cada pico tem uma face clara (virada para o sol) e outra em sombra, separadas por um veio em zigue-zague
+function mountains(pix, peaks, P, sunX, seed, hazeY, hazeCol) {
+  const { w, h, d } = pix, hz = C32(hazeCol);
+  for (let x = 0; x < w; x++) {
+    let top = 1e9, pk = peaks[0];
+    for (const p of peaks) { const y = p[1] + (x < p[0] ? (p[0] - x) * p[2] : (x - p[0]) * p[3]); if (y < top) { top = y; pk = p; } }
+    top = Math.round(top + jag(x, 9, 2.5, seed) + jag(x, 3, .8, seed + 1));
+    const side = sunX > pk[0] ? 1 : -1;
+    for (let y = Math.max(0, top); y < h; y++) {
+      const div = pk[0] + jag(y, 7, 4, seed + (pk[0] | 0)) - side * (y - pk[1]) * .18, lit = (x - div) * side > 0;
+      const band = jag(x * (lit ? .8 : -.8) + y * 1.3, 11, 1, seed + 5);
+      let t = lit ? 4 : 2; if (band > .5) t -= 1; else if (band < -.62) t += 1;
+      if (y - top < 1) t = lit ? 5 : 3; else if (y - top < 3 && lit) t = 5;
+      d[y * w + x] = (y - hazeY) / 34 > bay(x, y) ? hz : P[t];
+    }
   }
-  for (let i = 0; i < 60 * s; i++) { const y = base - R() * th, k = (base - y) / th, cx = x + Math.sin(k * 2.4) * 6 * s, w = (24 - 10 * k) * s; rect(g, cx - w / 2 + 2 + R() * (w - 4), y, 1, 2 + R() * 5, BK.sh); }
-  const top = base - th, tx = x + Math.round(Math.sin(2.4) * 6 * s);
-  for (const [dx, dy, w] of [[-60, -40, 6], [56, -48, 6], [-10, -62, 5], [80, -20, 4], [-78, -16, 4]]) { thick(g, tx, top + 6, tx + dx * s, top + dy * s, w * s + 1, 2, BK.out); thick(g, tx, top + 6, tx + dx * s, top + dy * s, w * s, 1, BK.b); }
-  const Ld = { out: '#16300e', b: '#2f5a1c', sh: '#224414', mid: '#3e7424', hi: '#5a9030', hi2: '#7aa83a' };
-  const L = { out: '#1e3e14', b: '#4c8a28', sh: '#2f5a1c', mid: '#78b034', hi: '#b0d44a', hi2: '#e2ec7c' };
-  const pts = [];
-  for (let i = 0; i < 46 * s; i++) { const a = R() * TAU, d = Math.sqrt(R()); pts.push([tx + Math.cos(a) * d * 82 * s, top - 34 * s + Math.sin(a) * d * 46 * s, (11 + R() * 10) * s]); }
-  for (const p of pts) leafCluster(g, p[0] + 5, p[1] + 6, p[2], Ld, R);
-  pts.sort((a, b) => a[1] - b[1]);
-  for (const p of pts) leafCluster(g, p[0], p[1], p[2], L, R);
-  return { cx: tx, cy: top - 34 * s, rx: 82 * s, ry: 46 * s };
+}
+// Tufo de folhas: contorno recortado em dentes, luz no alto e do lado do sol, sombra na barriga e textura
+// de folhinhas em tracinhos de 2 px (nada de bolhas nem de pedra).
+function leafClump(g, cx, cy, rx, ry, P, seed, lx = 1) {
+  const Hx = P.hex, x0 = Math.floor(cx - rx - 3), y0 = Math.floor(cy - ry - 3), x1 = Math.ceil(cx + rx + 3), y1 = Math.ceil(cy + ry + 3);
+  const inside = (x, y) => { const dx = Math.abs(x - cx) / rx, dy = Math.abs(y - cy) / ry; return Math.max(dx, dy) * .5 + (dx + dy) * .5 < 1 + (hash2(x >> 1, y >> 1, seed) - .5) * .32 + jag(x * 2 + y * 3, 6, .1, seed); };
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+    if (!inside(x, y)) continue;
+    const l = -(y - cy) / ry * .9 + (x - cx) / rx * lx * .38 + (hash2(x >> 1, y, seed + 3) - .5) * .55;
+    let t = l > .66 ? 5 : l > .28 ? 4 : l > -.18 ? 3 : l > -.6 ? 2 : 1;
+    if (!inside(x, y + 1)) t = 0; else if (!inside(x, y - 1)) t = Math.max(t, 4);
+    rect(g, x, y, 1, 1, Hx[t]);
+  }
+}
+function bush(g, x, base, s, seed) {
+  leafClump(g, x - 9 * s, base - 4 * s, 9 * s, 6 * s, RK.leafD, seed); leafClump(g, x + 10 * s, base - 5 * s, 10 * s, 7 * s, RK.leafD, seed + 1);
+  leafClump(g, x, base - 7 * s, 13 * s, 9 * s, RK.leaf, seed + 2);
+}
+// Árvore grande: raízes, tronco de casca sulcada, galhos em forquilha e copa em tufos sobrepostos
+// (uma camada de sombra atrás, os tufos claros na frente, de baixo para cima).
+const TREE_LOBES = [[-54, 8, 24, 13], [-24, 13, 22, 12], [10, 12, 24, 13], [46, 9, 24, 13], [-66, -6, 18, 11], [66, -4, 18, 11], [-38, -9, 26, 15], [0, -4, 28, 16], [36, -11, 26, 15], [-16, -24, 24, 13], [22, -26, 22, 12], [2, -36, 17, 9]];
+function bigTree(g, x, base, s, R, seed) {
+  const BK = ['#24140c', '#432716', '#633d22', '#84562f', '#a87440'], th = Math.round(58 * s);
+  const cxAt = y => x + Math.round(5 * s * Math.pow(clamp((base - y) / th, 0, 1), 1.5));
+  const wAt = y => Math.max(5, Math.round((15 - 5 * (base - y) / th) * s + Math.max(0, 7 - (base - y)) * 1.6 * s));
+  for (const [dx, w] of [[-20, 4], [-10, 3], [12, 3], [22, 4]]) { thick(g, x, base - 6, x + dx * s, base, w * s + 2, 3, BK[0]); thick(g, x, base - 6, x + dx * s, base - 1, w * s, 1, BK[2]); }
+  const top = base - th, tx = cxAt(top), cy0 = top - 32 * s, boughs = [[-46, 4, 6], [-18, -16, 5], [16, -20, 5], [44, 2, 6]];
+  for (const [dx, dy, w] of boughs) thick(g, tx, top + 6, tx + dx * s, cy0 + dy * s, w * s + 2, 3, BK[0]);
+  for (const [dx, dy, w] of boughs) { thick(g, tx, top + 6, tx + dx * s, cy0 + dy * s, w * s, 2, BK[2]); thick(g, tx + 1, top + 5, tx + dx * s + 1, cy0 + dy * s - 1, 1, 1, BK[4]); }
+  for (let y = base; y > top; y--) { const w = wAt(y); rect(g, cxAt(y) - w / 2 - 1, y, w + 2, 1, BK[0]); }
+  for (let y = base; y > top; y--) {
+    const w = wAt(y), xa = Math.round(cxAt(y) - w / 2), e = Math.max(2, Math.round(w * .28));
+    rect(g, xa, y, w, 1, BK[2]); rect(g, xa, y, e, 1, BK[1]); rect(g, xa + w - e, y, e, 1, BK[3]); rect(g, xa + w - 1, y, 1, 1, BK[4]);
+  }
+  // casca: sulcos compridos que acompanham o tronco, e um nó
+  for (let i = 0; i < Math.round(5 * s) + 1; i++) {
+    const f = .2 + R() * .6, y0 = base - 3 - ((R() * 8) | 0), len = Math.round((.4 + R() * .5) * th);
+    for (let k = 0; k < len; k++) { const y = y0 - k, w = wAt(y); if (y <= top + 2 || (k % 9) > 6) continue; rect(g, Math.round(cxAt(y) - w / 2 + w * f), y, 1, 1, i % 2 ? BK[1] : BK[0]); }
+  }
+  const ky = Math.round(base - th * .45), kx = cxAt(ky); rect(g, kx - 1, ky - 2, 3, 4, BK[0]); rect(g, kx, ky - 1, 1, 2, BK[1]); rect(g, kx - 2, ky - 3, 5, 1, BK[3]);
+  TREE_LOBES.forEach(([dx, dy, rx, ry], i) => leafClump(g, tx + (dx + 3) * s, cy0 + (dy + 5) * s, rx * s * 1.05, ry * s * 1.05, RK.leafD, seed + i));
+  TREE_LOBES.forEach(([dx, dy, rx, ry], i) => leafClump(g, tx + dx * s + (R() - .5) * 3, cy0 + dy * s + (R() - .5) * 2, rx * s, ry * s, RK.leaf, seed + 20 + i));
+  return { cx: tx, cy: cy0 - 8 * s, rx: 80 * s, ry: 36 * s };
 }
 function buildOutside() {
-  // céu em faixas, como o pôr da luz na referência
-  let [c, g] = mk(W, H);
-  const bands = ['#2458c0','#2a64c8','#3270d0','#3c7ed6','#4a8edc','#5c9fe2','#72b0e6','#8cc0ea','#a8cee8','#c4dae2','#dce2d4','#eee2bc','#f8e2a8'];
-  bands.forEach((col, i) => { rect(g, 0, i * 12, W, 12, col); if (i) dither(g, 0, i * 12, W, 2, bands[i - 1], i & 1); });
-  rect(g, 0, bands.length * 12, W, H, '#f8e2a8');
+  // céu de fim de tarde: faixas pontilhadas do índigo ao dourado, com estrias de nuvem no horizonte
+  let pix = new Pix(W, H), R = rng(40), c, g;
+  for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < W; x++, i++) { const v = clamp(y / 146, 0, 1) * (SKY.length - 1), b = v | 0, f = v - b; pix.d[i] = C32(SKY[Math.min(SKY.length - 1, b + (f > bay(x, y) ? 1 : 0))]); }
+  [c, g] = pix.done();
+  for (let i = 0; i < 9; i++) { const y = 96 + i * 5 + ((R() * 4) | 0), x = (R() * W) | 0, w = 30 + ((R() * 70) | 0), col = i % 2 ? '#ffd9a0' : '#f6a888'; rect(g, x, y, w, 1, col); rect(g, x + 6, y - 1, w - 16, 1, col); rect(g, x + 10, y + 1, w - 14, 1, '#d88a98'); }
   LAYER.sky = c;
-  // montanhas distantes, lilases
-  [c, g] = mk(layerW(PAR.far), H);
-  const ridge = (base, amp, f, ph, col, sh, top) => {
-    for (let x = 0; x < c.width; x++) {
-      const hgt = amp * (.55 * Math.sin(x * f + ph) + .3 * Math.sin(x * f * 2.3 + ph * 3) + .15 * Math.sin(x * f * 5.1 + 1));
-      const t = Math.round(base - hgt), slope = Math.cos(x * f + ph);
-      rect(g, x, t, 1, H - t, slope < 0 ? sh : col); rect(g, x, t, 1, 2, top);
-    }
-  };
-  ridge(118, 52, .022, 1.2, '#9a98d4', '#8886c4', '#c8c4ec');
-  ridge(134, 32, .034, 3.1, '#7c82c4', '#6c72b4', '#a4a8dc');
-  for (let y = 132; y < H; y += 2) { g.fillStyle = `rgba(214,218,236,${clamp((y - 132) / 60, 0, .55)})`; g.fillRect(0, y, c.width, 2); }
-  LAYER.far = c;
-  // colinas com ciprestes e a vila de colunas
-  [c, g] = mk(layerW(PAR.hills), H); let R = rng(41);
-  const hill = x => 130 + 8 * Math.sin(x * .018) + 5 * Math.sin(x * .047 + 2);
-  for (let x = 0; x < c.width; x++) { const t = Math.round(hill(x)); rect(g, x, t, 1, H - t, '#6a9a78'); rect(g, x, t, 1, 2, '#9ac496'); }
-  const hill2 = x => 146 + 6 * Math.sin(x * .03 + 1) + 3 * Math.sin(x * .09);
-  for (let x = 0; x < c.width; x++) { const t = Math.round(hill2(x)); rect(g, x, t, 1, H - t, '#558866'); rect(g, x, t, 1, 1, '#7aae80'); }
-  const CY = { out: '#1e3a26', b: '#2e5a3a', hi: '#4a7a52', sh: '#22442c' };
-  for (let i = 0; i < 22; i++) { const x = R() * c.width; if (Math.abs(x - 470) < 40) continue; cypress(g, x, hill(x) + 3, 16 + R() * 18, R, CY); }
-  for (let i = 0; i < 26; i++) { const x = R() * c.width; ell(g, x, hill2(x) - 2, 4 + R() * 3, 3, '#3e6e4a'); ell(g, x - 1, hill2(x) - 3, 2, 1.5, '#5e8e64'); }
-  const vx = 470, vy = Math.round(hill(vx)) + 2;
-  const Wl = '#ecd6ac', Ws = '#c9a878', Rf = '#b85a3a', Rs = '#8a3e28', Cl = '#f6ead0', Dk = '#5a3a2a', O = '#3a2418';
-  rect(g, vx - 24, vy - 22, 48, 22, O); rect(g, vx - 23, vy - 21, 46, 21, Wl); rect(g, vx + 14, vy - 21, 9, 21, Ws);
-  for (let i = 0; i < 5; i++) { rect(g, vx - 20 + i * 8, vy - 19, 3, 18, Cl); rect(g, vx - 18 + i * 8, vy - 19, 1, 18, Ws); }
-  for (let k = 0; k < 9; k++) rect(g, vx - 27 + k * 3, vy - 23 - k, 54 - k * 6, 1, k === 0 ? Rs : Rf);
-  rect(g, vx - 27, vy - 23, 54, 1, O); rect(g, vx - 3, vy - 12, 6, 12, Dk);
-  rect(g, vx + 26, vy - 14, 22, 14, O); rect(g, vx + 27, vy - 13, 20, 13, Wl); rect(g, vx + 41, vy - 13, 6, 13, Ws);
-  rect(g, vx + 25, vy - 17, 24, 3, Rf); rect(g, vx + 25, vy - 17, 24, 1, '#d87a50'); rect(g, vx + 31, vy - 10, 3, 4, Dk); rect(g, vx + 37, vy - 10, 3, 4, Dk);
-  rect(g, vx - 52, vy - 10, 18, 10, O); rect(g, vx - 51, vy - 9, 16, 9, Wl); rect(g, vx - 53, vy - 13, 20, 3, Rf); rect(g, vx - 47, vy - 7, 3, 4, Dk);
-  for (let i = 0; i < 4; i++) rect(g, vx - 8 - i * 2, vy + i * 2, 16 + i * 4, 2, i % 2 ? '#d8c09a' : '#c8ae88');
-  cypress(g, vx - 32, vy + 2, 26, R, CY); cypress(g, vx + 54, vy + 2, 22, R, CY);
-  OUT.sheep = []; for (let i = 0; i < 9; i++) { const x = 120 + R() * 280; OUT.sheep.push([x, hill2(x) + 4 + R() * 10]); }
+  // montanhas: duas cordilheiras imponentes, a de trás mais pálida
+  pix = new Pix(layerW(PAR.far), H);
+  mountains(pix, [[30, 80, .55, .5], [124, 54, .62, .7], [214, 98, .4, .45], [306, 50, .66, .56], [392, 78, .5, .6], [476, 60, .6, .5]], ramp('#4a4088', '#5a4894', '#6c52a0', '#8a60a4', '#b87aa0', '#e8a090'), 210, 61, 118, '#f6a878');
+  mountains(pix, [[-14, 106, .5, .45], [84, 92, .5, .62], [166, 122, .34, .4], [262, 116, .4, .42], [350, 88, .56, .5], [438, 108, .46, .5], [508, 96, .5, .5]], ramp('#2e2862', '#3a3070', '#4a3a7e', '#684888', '#965c88', '#cc8280'), 210, 67, 132, '#f09a74');
+  LAYER.far = pix.done()[0];
+  // colinas ao entardecer, com pinheiros, cerca e as casas ao longe
+  pix = new Pix(layerW(PAR.hills), H); R = rng(41);
+  const hillA = x => 136 + jag(x, 53, 7, 81) + jag(x, 17, 2, 82), hillB = x => 151 + jag(x, 37, 5, 83) + jag(x, 11, 1.5, 84);
+  terrain(pix, (x, y) => y >= hillA(x), { ramp: ramp('#22384a', '#2c4c50', '#386452', '#507e54', '#84a058', '#d0c064'), cw: 20, ch: 5, seed: 85, lx: -1, contrast: .5, deep: 0 });
+  terrain(pix, (x, y) => y >= hillB(x), { ramp: ramp('#182c38', '#203e3c', '#2a5440', '#3e6e44', '#688e48', '#b0b454'), cw: 16, ch: 5, seed: 86, lx: -1, contrast: .5, deep: 0 });
+  [c, g] = pix.done();
+  for (let i = 0; i < 34; i++) { const x = (R() * c.width) | 0; if (Math.abs(x - 484) < 50) continue; (R() < .6 ? pine : cypress)(g, x, Math.round(hillA(x)) + 3, 12 + ((R() * 16) | 0), RK.pine, -1, i); }
+  const vx = 470, vy = Math.round(hillA(vx)) + 3;
+  cottage(g, vx, vy); fence(g, vx - 58, vx - 22, vy + 1); cypress(g, vx - 24, vy + 1, 26, RK.pine, -1, 7); pine(g, vx + 50, vy + 1, 22, RK.pine, -1);
+  for (let i = 0; i < 30; i++) { const x = (R() * c.width) | 0; pine(g, x, Math.round(hillB(x)) + 3, 9 + ((R() * 9) | 0), RK.leafD, -1); }
+  OUT.sheep = []; for (let i = 0; i < 9; i++) { const x = 120 + R() * 280; OUT.sheep.push([x, hillB(x) + 5 + R() * 10]); }
   LAYER.hills = c;
-  // vale: floresta, rio, lago e a cachoeira
-  [c, g] = mk(layerW(PAR.valley), 300); R = rng(43);
-  rect(g, 0, 150, c.width, 150, '#2e6a3a');
-  const FO = { out: '#1a4224', b: '#3a7a3e', sh: '#2a5a30', mid: '#4e9448', hi: '#74b45a', hi2: '#9ad070' };
-  for (let row = 0; row < 3; row++) for (let x = -8; x < c.width + 8; x += 7 + R() * 7) leafCluster(g, x, 124 + row * 9 + R() * 6, 6 + R() * 5, FO, R);
-  const cl = { out: '#3a2418', shade: '#7a5234', base: '#a8784a', hi: '#c8986a', hi2: '#e0b888' };
-  for (let y = 62; y < 154; y += 7) for (let x = 650; x < 726; x += 8 + R() * 3) boulder(g, x + R() * 3, y + R() * 2, 5 + R() * 3, 4 + R() * 2, cl, R);
-  rect(g, 646, 56, 84, 5, '#4e9448'); rect(g, 646, 56, 84, 1, '#9ad070');
-  for (let x = 650; x < 726; x += 7) leafCluster(g, x, 52 + R() * 3, 5 + R() * 3, FO, R);
-  cypress(g, 712, 56, 26, R, CY);
-  const river = [[0, 160], [70, 156], [140, 161], [210, 155], [290, 152], [360, 150], [430, 154], [510, 158], [580, 154], [650, 153], [690, 152]];
-  for (let i = 0; i < river.length - 1; i++) {
-    const [x1, y1] = river[i], [x2, y2] = river[i + 1];
-    for (let x = x1; x <= x2; x++) { const y = Math.round(lerp(y1, y2, (x - x1) / (x2 - x1))); rect(g, x, y - 3, 1, 1, '#2a5a2e'); rect(g, x, y - 2, 1, 5, '#3f8fd0'); rect(g, x, y - 2, 1, 1, '#8ccff0'); rect(g, x, y + 3, 1, 1, '#2a5a2e'); }
+  // vale: a mesa com a cachoeira, o lago, a floresta de pontas e a névoa lá embaixo
+  pix = new Pix(layerW(PAR.valley), 300); R = rng(43);
+  const VW = pix.w, mesaTop = x => 58 + jag(x, 23, 3, 91) + jag(x, 7, 1, 92), mesaL = y => 606 - (y - 58) * .3 + jag(y, 9, 3, 93), mesaR = y => 772 + (y - 58) * .22 + jag(y, 11, 3, 94);
+  const backT = spikeRow(R, 0, VW, 4, 6, 5, 16, 3, 3), frontT = spikeRow(R, 0, VW, 5, 8, 8, 24, 4, 4), tb = new Float32Array(VW), tf = new Float32Array(VW);
+  // além da mesa o terreno despenca: é o abismo que se vê da borda do planalto. A floresta próxima afunda e,
+  // lá embaixo, surgem faixas de mata cada vez mais pálidas e miúdas (perspectiva aérea), com um rio distante.
+  const gorge = x => clamp((x - 694) / 44, 0, 1), tiny = [spikeRow(R, 680, VW, 2, 3, 2, 4, 2, 1), spikeRow(R, 680, VW, 3, 4, 3, 6, 2, 2), spikeRow(R, 680, VW, 4, 5, 5, 10, 3, 2)];
+  for (let x = 0; x < VW; x++) { const q = gorge(x); tb[x] = 146 - spikeAt(backT, x) + jag(x, 31, 3, 95) + q * 60; tf[x] = 170 - spikeAt(frontT, x) + jag(x, 43, 4, 96) + q * q * 150; }
+  terrain(pix, (x, y) => y < 158 && y >= mesaTop(x) && x >= mesaL(y) && x < mesaR(y), { ramp: RK.mesa, cw: 8, ch: 13, seed: 97, lx: -1, deep: 0 });
+  terrain(pix, (x, y) => y >= tb[x] && y < 153, { ramp: ramp('#1c2c44', '#243a48', '#2e4c4c', '#3e6450', '#5a8054', '#8ea45c'), cw: 7, ch: 5, seed: 98, lx: -1, contrast: 1.3, deep: 0 });
+  for (let y = 151; y < 164; y++) for (let x = 0; x < 708 + jag(y, 3, 4, 90); x++) {   // lago e rio: azul do fim de tarde com reflexos do sol
+    const sun = Math.max(0, 1 - Math.abs(x - 372) / 70), hh = hash2((x + y * 2) >> 3, y, 99);
+    pix.d[y * VW + x] = C32(y > 152 && hh < sun * .55 ? (hh < sun * .2 ? '#ffd890' : '#f49a6c') : hh > .86 ? '#8aa2e2' : y < 153 ? '#39468e' : '#4a5cae');
   }
-  VALLEY.river = river;
-  ell(g, 360, 151, 56, 6, '#2a5a2e'); ell(g, 360, 151, 54, 5, '#4aa0dc'); ell(g, 350, 149, 34, 2, '#a8e0f8');
-  ell(g, 684, 153, 18, 4, '#4aa0dc');
-  for (let row = 0; row < 6; row++) for (let x = -8; x < c.width + 8; x += 8 + R() * 8) leafCluster(g, x, 172 + row * 20 + R() * 8, 8 + R() * 6, FO, R);
-  for (let y = 190; y < 300; y += 2) { g.fillStyle = `rgba(200,220,210,${clamp((y - 190) / 140, 0, .6)})`; g.fillRect(0, y, c.width, 2); }
+  const HAZE = [ramp('#8f7fae', '#9a88b2', '#a691b5', '#b49cb8', '#c6aaba', '#dcbcbc'), ramp('#5c6890', '#677691', '#738693', '#839896', '#99ac98', '#b8c09c'), ramp('#2c4460', '#335264', '#3c6266', '#4a7668', '#5e8c6a', '#80a470')];
+  [147, 180, 218].forEach((gy, k) => terrain(pix, (x, y) => x > 690 + jag(y, 7, 3, 110 + k) && y >= gy - spikeAt(tiny[k], x) + jag(x, 29 + k * 9, 3 + k, 113 + k), { ramp: HAZE[k], cw: 5 + k * 2, ch: 4 + k, seed: 116 + k, lx: -1, contrast: 1.2, deep: 0, x0: 680 }));
+  terrain(pix, (x, y) => y >= tf[x], { ramp: RK.pine, cw: 8, ch: 6, seed: 100, lx: -1, contrast: 1.4, deep: 0 });
+  [c, g] = pix.done();
+  for (let x = 716; x < VW; x++) { const y = 203 + Math.round(jag(x, 19, 6, 120)); if (y < tf[x] - 2 && hash2(x >> 2, 5, 121) < .8) { rect(g, x, y, 1, 2, '#c4d2f0'); if (x % 5 === 0) rect(g, x, y, 1, 1, '#ffe4b0'); } }   // rio lá embaixo
+  for (let x = 610; x < 770; x++) { const y = Math.round(mesaTop(x)); if (x >= mesaL(y + 2) && x < mesaR(y + 2)) { rect(g, x, y - 1, 1, 3, '#5a8a3e'); rect(g, x, y - 1, 1, 1, '#a8c456'); if (R() < .3) rect(g, x, y + 2, 1, 1 + ((R() * 3) | 0), '#3e6a34'); } }
+  for (let i = 0; i < 16; i++) { const x = 614 + ((R() * 150) | 0); if (Math.abs(x - 684) < 13) continue; (R() < .5 ? pine : cypress)(g, x, Math.round(mesaTop(x)), 9 + ((R() * 12) | 0), RK.pine, -1, i); }
+  rect(g, 676, 57, 16, 3, '#39468e'); rect(g, 670, 153, 28, 2, '#e8f2ff'); rect(g, 666, 155, 36, 1, '#b8cdf2');
+  veil(g, 0, 164, VW, 136, '#c4a0bc', (x, y) => (y - 182) / 150 + .08 * jag(x, 29, 1, 44) + gorge(x) * (y < tf[x] ? .22 + (y - 164) / 420 : 0), true);
   LAYER.valley = c;
-  // árvores próximas, abaixo do penhasco
-  [c, g] = mk(layerW(PAR.near), 300); R = rng(47);
-  const NE = { out: '#163a1e', b: '#2f7036', sh: '#22522a', mid: '#47904a', hi: '#6cb456', hi2: '#98d070' };
-  for (let x = 30; x < c.width; x += 120 + R() * 90) cypress(g, x, 200, 70 + R() * 40, R, { out: '#14301a', b: '#285a32', hi: '#3e7a46', sh: '#1c4024' });
-  for (let x = -10; x < c.width + 10; x += 14 + R() * 12) { const y = 150 + R() * 16; rect(g, x - 2, y, 4, 60, '#4a3020'); leafCluster(g, x, y, 12 + R() * 8, NE, R); }
-  for (let row = 0; row < 5; row++) for (let x = -10; x < c.width + 10; x += 12 + R() * 10) leafCluster(g, x, 186 + row * 22 + R() * 8, 12 + R() * 6, NE, R);
-  for (let y = 200; y < 300; y += 2) { g.fillStyle = `rgba(190,214,204,${clamp((y - 200) / 120, 0, .65)})`; g.fillRect(0, y, c.width, 2); }
-  LAYER.near = c;
-  // o planalto onde Code caminha
-  [c, g] = mk(OUT.W, 380); R = rng(55);
-  const grass = { top: '#9cd452', b: '#6aae3a', dk: '#4a8a2a' };
-  rect(g, 0, 174, OUT.edge, 206, '#4e4038');
-  for (let y = 176; y < 380; y += 9) for (let x = -6; x < OUT.edge - 4; x += 11 + R() * 6) boulder(g, x + R() * 4, y + R() * 3, 7 + R() * 5, 6 + R() * 3, y < 220 ? ROCK_SUN : { out: '#2a201c', shade: '#4a3c34', base: '#5e4c42', hi: '#76604e', hi2: '#8a7260' }, R);
-  for (let y = 136; y < 380; y += 7) boulder(g, OUT.edge - 2 + R() * 6, y, 5 + R() * 4, 5 + R() * 2, ROCK_SUN, R);
-  // monte rochoso da saída da caverna
-  for (let y = 66; y < 172; y += 7) { const half = 30 + (y - 66) * .8; for (let x = 70 - half; x < 70 + half; x += 9 + R() * 4) boulder(g, x + R() * 3, y + R() * 2, 6 + R() * 4, 5 + R() * 3, ROCK_SUN, R); }
-  moss(g, 40, 100, 66, R); for (let x = 30; x < 112; x += 5) rect(g, x, 62 + Math.abs(x - 70) * .3 + R() * 3, 3, 2, '#7cc243');
-  ell(g, 70, 142, 17, 30, '#2a1e1a'); ell(g, 70, 145, 14, 27, '#0d0809');
-  // grama do topo, com franja caindo sobre a rocha
-  rect(g, 0, 166, OUT.edge, 8, grass.b); rect(g, 0, 166, OUT.edge, 1, grass.top);
-  for (let x = 0; x < OUT.edge; x++) {
-    if (R() < .6) { const h = 1 + ((R() * 4) | 0); rect(g, x, 166 - h, 1, h, R() < .5 ? grass.b : grass.top); }
-    rect(g, x, 174, 1, 1 + ((R() * 3) | 0), grass.dk);
-    if (R() < .12) rect(g, x, 174, 1, 4 + ((R() * 9) | 0), '#5a9a34');
+  // o planalto: relva sobre terra em blocos, degraus para pular, o riacho, paredões com cipós para escalar e o precipício no fim
+  pix = new Pix(OUT.W, 380); R = rng(55);
+  const E = OUT.edge, ET = OUT.edgeY, SX = OUT.streamX, SW = OUT.streamW, SUN = RK.sun.hex;
+  // o penhasco de onde sai a caverna: patamares de rocha, e não uma rampa lisa
+  const crag = x => (x < 54 ? 40 : x < 100 ? 56 : x < 124 ? 84 : x < 144 ? 116 : x < 160 ? 146 : 999) + jag(x, 13, 4, 101) + jag(x, 5, 1.5, 102);
+  const edgeX = y => E - Math.min(9, Math.max(0, y - ET - 3) * .4) + Math.min(0, jag(y, 11, 3.5, 103));
+  terrain(pix, (x, y) => (x < edgeX(y) && y >= outTop(x)) || y >= crag(x),
+    { rampAt: (x, y) => x < 172 + (bay(x, y) - .5) * 20 && y < 184 + (bay(x, y) - .5) * 14 ? RK.sun : RK.earth, cw: 14, ch: 9, seed: 105, lx: 1, deep: 16 });
+  [c, g] = pix.done();
+  // a boca da caverna de onde ele saiu: arco irregular com três planos de profundidade, borda iluminada pelo sol,
+  // dentes de pedra no lábio, cipós, musgo e pedras caídas ao pé
+  const arch = [[46, 168], [45, 150], [48, 134], [55, 121], [66, 113], [78, 111], [90, 116], [98, 127], [103, 142], [104, 168]], inset = k => arch.map(([x, y]) => [75 + (x - 75) * k, 168 + (y - 168) * k]);
+  polyFill(g, inset(1.07), SUN[0]); polyFill(g, arch, '#2c1812'); polyFill(g, inset(.86), '#160c0a'); polyFill(g, inset(.68), '#080405');
+  const side = (pts, y) => { for (let i = 0; i + 1 < pts.length; i++) { const [x1, y1] = pts[i], [x2, y2] = pts[i + 1]; if (y >= y1 && y <= y2) return x1 + (x2 - x1) * (y - y1) / (y2 - y1 || 1); } return pts[pts.length - 1][0]; };
+  const rs = [[78, 111], [90, 116], [98, 127], [103, 142], [104, 168]], ls = [[78, 111], [66, 113], [55, 121], [48, 134], [45, 150], [46, 168]];
+  for (let y = 112; y < 168; y++) { const xr = Math.round(side(rs, y)) + 2, xl = Math.round(side(ls, y)) - 3; rect(g, xr, y, 2, 1, SUN[y % 7 < 5 ? 4 : 3]); rect(g, xr + 1, y, 1, 1, SUN[5]); rect(g, xl, y, 2, 1, SUN[1]); if (y % 9 === 4) rect(g, xr, y, 3, 1, SUN[0]); }
+  for (const [sx, sy, sw, sh] of [[59, 118, 4, 7], [69, 113, 5, 10], [84, 114, 4, 8], [93, 121, 4, 6]]) spike(g, sx, sy, sw, sh, RK.sun, 1, R);
+  for (const [vx, vy, vl] of [[55, 122, 12], [75, 112, 19], [88, 116, 10], [97, 127, 15]]) vine(g, vx, vy, vl, R);
+  for (const [mx, my, mw] of [[60, 111, 7], [79, 106, 9], [93, 114, 6], [101, 136, 4]]) { rect(g, mx, my, mw, 2, MOSS[1]); rect(g, mx + 1, my, mw - 2, 1, MOSS[2]); rect(g, mx + 2, my - 1, 2, 1, MOSS[3]); }
+  for (let x = 48; x < 106; x += 11 + ((R() * 4) | 0)) { rect(g, x, 168, 9, 2, SUN[3]); rect(g, x, 168, 9, 1, SUN[5]); rect(g, x + 8, 168, 1, 2, SUN[1]); }   // lajes gastas na soleira
+  chip(g, 30, 169, 6, 4, RK.sun); chip(g, 36, 169, 10, 7, RK.sun); chip(g, 104, 169, 9, 6, RK.sun); chip(g, 114, 169, 5, 3, RK.sun);
+  for (let x = 0; x < 160; x++) { const y = Math.round(crag(x)); if (y < 900 && R() < .85) { rect(g, x, y - 1, 1, 3, '#74ae38'); if (R() < .5) rect(g, x, y - 2 - ((R() * 2) | 0), 1, 2, '#c2d84e'); if (R() < .3) rect(g, x, y + 2, 1, 1 + ((R() * 3) | 0), '#427c2c'); } }
+  // árvores, arbustos e cercas: tudo plantado no chão do patamar em que está, e nada perto da borda do precipício
+  OUT.treeTop = bigTree(g, 300, 169, 1, R, 201);
+  bigTree(g, 1236, ET + 1, .58, R, 202);
+  for (const [bx, s] of [[190, 1], [476, 1], [612, .9], [770, 1.1], [1020, 1], [1160, .9]]) bush(g, bx, outTop(bx), s, bx);
+  fence(g, 340, 406, 168); fence(g, 990, 1078, 122);
+  for (const [px, ph] of [[236, 46], [596, 44], [904, 52], [1176, 46]]) cypress(g, px, outTop(px), ph, RK.pine, 1, px);
+  // relva: acompanha cada patamar; faixa clara em cima, lâminas, franja caindo sobre a terra
+  const GR = { top: '#c2d84e', b: '#74ae38', dk: '#427c2c', fr: '#2c5a24' };
+  for (let x = 110; x < E - 12; x++) {
+    if (x >= SX && x < SX + SW) continue;
+    const gy = outTop(x);
+    rect(g, x, gy - 2, 1, 7, GR.b); rect(g, x, gy - 2, 1, 1, GR.top); if (hash2(x, 1, 7) < .5) rect(g, x, gy - 1, 1, 1, GR.top);
+    if (R() < .55) { const hh = 1 + ((R() * 4) | 0); rect(g, x, gy - 2 - hh, 1, hh, R() < .5 ? GR.b : GR.top); }
+    rect(g, x, gy + 5, 1, 1 + ((R() * 3) | 0), GR.dk); if (R() < .12) rect(g, x, gy + 5, 1, 4 + ((R() * 8) | 0), GR.fr);
   }
-  // o riacho atravessa o planalto e cai pela rocha
-  rect(g, OUT.streamX - 2, 166, OUT.streamW + 4, 8, '#3a5a3a');
-  for (const sx of [OUT.streamX - 4, OUT.streamX + OUT.streamW + 3]) for (let y = 164; y < 216; y += 6) boulder(g, sx + R() * 2, y, 3 + R() * 2, 3, ROCK_SUN, R);
-  rect(g, OUT.streamX + 2, 174, OUT.streamW - 4, 42, '#3a3a40');
-  const T1 = bigTree(g, 300, 168, 1, R); OUT.treeTop = T1;
-  bigTree(g, 1080, 168, .62, R);
-  const BU = { out: '#1f4f2c', b: '#3c9448', sh: '#2c6e36', mid: '#62bb56', hi: '#98da74', hi2: '#c8ec96' };
-  for (const bx of [170, 560, 760, 1180, 1290]) for (let i = 0; i < 6; i++) leafCluster(g, bx + R() * 30 - 15, 160 + R() * 6, 6 + R() * 5, BU, R);
-  for (let i = 0; i < 12; i++) { const x = 140 + R() * 1200; if (Math.abs(x - OUT.streamX - 13) < 30) continue; boulder(g, x, 166, 4 + R() * 4, 3 + R() * 2, ROCK_SUN, R); moss(g, x - 3, x + 3, 163, R); }
-  for (let i = 0; i < 170; i++) { const x = 130 + R() * (OUT.edge - 140); if (Math.abs(x - OUT.streamX - 13) < 20) continue; flowerAt(g, x, 163 + R() * 3, (R() * 4) | 0); }
+  // cipós grossos nos paredões que se escalam
+  for (const cl of CLIMBS) {
+    rect(g, cl.x - 4, cl.top - 3, 10, 3, MOSS[2]); rect(g, cl.x - 3, cl.top - 4, 7, 1, MOSS[3]);
+    for (let k = 0; k < 4; k++) vine(g, cl.x - 3 + k * 2, cl.top - 1, cl.bot - cl.top - 5 - k * 5, R);
+    for (let y = cl.top; y < cl.bot - 4; y++) { rect(g, cl.x - 1 + (y % 6 < 3 ? 0 : 1), y, 2, 1, VINE[1]); if (y % 3 === 0) rect(g, cl.x - 5 + ((y * 5) % 9), y, 3, 2, RK.leaf.hex[3 + (y % 2)]); if (y % 4 === 1) rect(g, cl.x - 4 + ((y * 3) % 8), y, 2, 1, RK.leaf.hex[5]); }   // hera folhuda: mostra onde dá para subir
+  }
+  rect(g, SX, 174, SW, 2, RK.earth.hex[0]); for (let i = 0; i < 5; i++) rect(g, SX + 2 + i * 5, 173, 3, 1, SUN[3]);   // leito de seixos do riacho
+  for (let i = 0; i < 14; i++) { const x = 150 + ((R() * 1180) | 0), gy = outTop(x); if (gy !== outTop(x + 9) || gy !== outTop(x - 2) || gy > 170) continue; chip(g, x, gy - 1, 4 + ((R() * 5) | 0), 2 + ((R() * 3) | 0), RK.sun); }
+  for (let i = 0; i < 150; i++) { const x = Math.round(130 + R() * (E - 250)), gy = outTop(x); if (gy !== outTop(x + 2) || gy !== outTop(x - 2) || gy > 170) continue; flowerAt(g, x, gy - 5 + ((R() * 3) | 0), (R() * 4) | 0); }
+  // a borda: a relva acaba, sobra rocha nua rachada e o vazio
+  for (let i = 0; i < 5; i++) crack(g, E - 3 - i * 5 - ((R() * 3) | 0), ET + 1, 8 + R() * 22, RK.earth.hex[0], R);
+  chip(g, E - 22, ET, 4, 2, RK.sun); chip(g, E - 9, ET, 3, 2, RK.sun);
   LAYER.ground = c;
-  // primeiro plano: samambaias e o arbusto que esconde a borda do penhasco
-  [c, g] = mk(OUT.W, H); R = rng(57);
-  const FE = { out: '#163a14', b: '#3a8a2e', sh: '#286a22', mid: '#5aaa3e', hi: '#8ed05a', hi2: '#b8e47a' };
-  for (let x = -10; x < OUT.W; x += 26 + R() * 30) for (let k = 0; k < 7; k++) { const a = -Math.PI / 2 + (k - 3) * .38, len = 14 + R() * 8; thick(g, x, 220, x + Math.cos(a) * len * 1.4, 220 + Math.sin(a) * len, 3, 1, k % 2 ? FE.b : FE.mid); }
-  for (let i = 0; i < 10; i++) leafCluster(g, 1364 + R() * 40, 150 + R() * 14, 7 + R() * 6, BU, R);
-  for (let i = 0; i < 14; i++) rect(g, 1360 + R() * 46, 144 + R() * 18, 1, 1, ['#e8463a', '#ffd84a', '#ffffff'][(R() * 3) | 0]);
-  LAYER.front = c;
 }
-// quadros animados de água (cachoeira e cascata do riacho)
+// quadros animados de água (cachoeira e queda do riacho)
 function waterFrames(w, h, n, seed) {
   const R = rng(seed), off = []; for (let x = 0; x < w; x++) off.push((R() * 10) | 0);
   const out = [];
@@ -326,7 +491,7 @@ function waterFrames(w, h, n, seed) {
     const [c, g] = mk(w, h);
     for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) {
       const v = (((y - f * 10 / n * 2 + off[x]) % 10) + 10) % 10;
-      g.fillStyle = v < 1.6 ? '#ffffff' : v < 4.5 ? '#c4e8f8' : (x === 0 || x === w - 1) ? '#5aa8d8' : '#8ccbe8';
+      g.fillStyle = v < 1.6 ? '#ffffff' : v < 4.5 ? '#c4e0f8' : (x === 0 || x === w - 1) ? '#5a88d0' : '#8cb4e8';
       g.fillRect(x, y, 1, 1);
     }
     for (let k = 0; k < w * 2; k++) { g.fillStyle = '#ffffff'; g.fillRect((R() * w) | 0, h - 1 - ((R() * 5) | 0), 1, 1); }
@@ -334,3 +499,4 @@ function waterFrames(w, h, n, seed) {
   }
   return out;
 }
+

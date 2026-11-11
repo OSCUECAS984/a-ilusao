@@ -1,4 +1,3 @@
-
 // =============================================================== ÁUDIO
 // Tudo sintetizado com Web Audio: nenhuma dependência de arquivo, funciona offline.
 const AU = { C: null, master: null, music: null, sfx: null, amb: {}, cur: 'none', want: 'none', muted: false, next: {}, noise: null, waterNear: 0 };
@@ -165,7 +164,7 @@ const $ = id => document.getElementById(id);
 const UI = { dialog: $('dialog'), face: $('d-face'), portrait: $('portrait'), dwho: $('dialog-who'), dtext: $('dialog-text'), dnext: $('dialog-next'), choices: $('dialog-choices'),
   prompt: $('prompt'), card: $('card'), cardEye: $('card-eyebrow'), cardTitle: $('card-title'), toast: $('toast'), qte: $('qte'), qLabel: $('qte-label'), qZone: $('qte-zone'),
   qCursor: $('qte-cursor'), qBar: $('qte-bar'), qHint: $('qte-hint'), pips: [...document.querySelectorAll('.pips i')], meter: $('meter'),
-  mFirm: $('m-firm'), mBal: $('m-bal'), hud: $('hud'), hudScene: $('hud-scene'), goal: $('hud-goal'), goalText: $('hud-goal-text'), hudCycle: $('hud-cycle'), hudDeaths: $('hud-deaths'),
+  mFirm: $('m-firm'), mBal: $('m-bal'), mGrip: $('m-grip'), hud: $('hud'), hudScene: $('hud-scene'), goal: $('hud-goal'), goalText: $('hud-goal-text'), hudCycle: $('hud-cycle'), hudDeaths: $('hud-deaths'),
   mute: $('mute'), ending: $('ending'), endLines: $('ending-lines'), endCycle: $('ending-cycle'), title: $('title'), start: $('start'), tCycle: $('t-cycle') };
 const pctx = UI.portrait.getContext('2d'); pctx.imageSmoothingEnabled = false;
 
@@ -263,13 +262,14 @@ function card(eye, title) { UI.cardEye.textContent = eye; UI.cardTitle.textConte
 UI.card.addEventListener('animationend', () => { UI.card.hidden = true; UI.card.classList.remove('show'); });
 function toast(text, dur = 3.5) { UI.toast.textContent = text; UI.toast.style.setProperty('--dur', dur + 's'); UI.toast.hidden = false; UI.toast.classList.remove('show'); void UI.toast.offsetWidth; UI.toast.classList.add('show'); }
 UI.toast.addEventListener('animationend', () => { UI.toast.hidden = true; UI.toast.classList.remove('show'); });
-function meter(show, firm = 0, bal = 1) {
+function meter(show, firm = 0, bal = 1, grip = 1) {
   UI.meter.hidden = !show; if (!show) return;
   UI.mFirm.style.width = (firm * 100).toFixed(1) + '%'; UI.mBal.style.width = (clamp(bal, 0, 1) * 100).toFixed(1) + '%';
   UI.mBal.classList.toggle('low', bal < .35);
+  UI.mGrip.style.width = (clamp(grip, 0, 1) * 100).toFixed(1) + '%'; UI.mGrip.classList.toggle('low', grip < .2);
 }
-const SCENE_NAMES = { chains: 'I · As Correntes e a Fagulha', steps: 'II · Os Primeiros Passos e a Fogueira', parkour: 'III · O Parkour da Caverna',
-  light: 'IV · A Revelação e o Ofuscamento', outside: 'V · O Mundo Exterior', ending: '' };
+const SCENE_NAMES = { chains: 'I · As Correntes e a Fagulha', steps: 'II · Os Primeiros Passos e a Fogueira', parkour: 'III · A Ascensão',
+  light: 'IV · A Entrada da Caverna', outside: 'V · O Mundo Exterior', ending: '' };
 function hud() {
   UI.hud.hidden = G.scene === 'title' || G.scene === 'starting' || G.scene === 'ending';
   UI.hudScene.textContent = SCENE_NAMES[G.scene] || '';
@@ -277,3 +277,4 @@ function hud() {
   UI.hudDeaths.hidden = G.scene !== 'parkour' || !G.deaths;
   UI.hudDeaths.textContent = 'Quedas: ' + G.deaths;
 }
+

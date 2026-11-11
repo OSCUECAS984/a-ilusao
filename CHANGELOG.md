@@ -1,5 +1,17 @@
 # Histórico de versões
 
+## v3.0.0 · 11/11/2026
+
+Nova build enviada pela equipe, focada em arte.
+
+- **Rochas facetadas:** toda a pedra do jogo virou blocos angulosos (células de Voronoi) com contorno, aresta iluminada e fendas, no lugar das pedras redondas.
+- **Code redesenhado** a partir de uma folha de referência: cabeça grande, cabelo castanho espetado, túnica bege de manga comprida, faixa na cintura, calça e botas. Caminhada em 6 quadros, escalada por cipós e animação de desmaio.
+- **Retratos** refeitos no mesmo traço dos sprites, incluindo barba e bigode nos prisioneiros.
+- **Salão das estátuas** reescavado: nichos atrás de cada estátua, pórtico em ruínas, passarela em patamares, escada até a fogueira, fenda no teto com musgo e cipós, cogumelos luminosos e rocha que muda de cor com a distância do fogo.
+- **Estátuas** talhadas em polígonos; sombras projetadas com penumbra pontilhada.
+- **Nuvens** em pixel art com base reta e luz do poente.
+- Tela inicial com a linha de controles resumida.
+
 ## v2.0.0 · 10/11/2026
 
 Imersão, narrativa e áudio. Especificação em [docs/especificacao-v2.md](docs/especificacao-v2.md).
