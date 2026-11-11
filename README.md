@@ -5,7 +5,7 @@ Feito em HTML5 Canvas puro, num único arquivo, sem imagens nem sons externos: t
 
 > **Repositório privado.** Serve de backup e organização do projeto até a primeira versão pública.
 
-Versão atual: **v3.1.1** · veja o [CHANGELOG](CHANGELOG.md).
+Versão atual: **v3.2.0** · veja o [CHANGELOG](CHANGELOG.md).
 
 ---
 
@@ -22,8 +22,9 @@ A música começa no primeiro clique ou toque, porque os navegadores bloqueiam s
 | `←` `→` ou `A` `D` | Andar e escolher |
 | `Espaço` ou `W` | Pular (segure para ir mais alto) |
 | `E` | Interagir · Examinar · Quebrar correntes |
+| segure `↓` ou `S` | Agachar (anda devagar e passa por lugares baixos) |
 | segure `E` | Apoiar-se na parede (Cenário II) |
-| `S` / `N` | Responder Sim ou Não |
+| `S` / `N` | Responder Sim ou Não (quando houver escolha) |
 | `Enter` ou clique | Avançar diálogo |
 | `M` | Ligar ou desligar o som |
 
@@ -40,6 +41,8 @@ No celular aparecem botões de toque abaixo da tela.
 | V | O Mundo Exterior | Exploração livre com animais, rio, cachoeira, vila e o sol. Ao se aproximar demais da vista, Code cai do precipício e o ciclo recomeça no Cenário I. |
 
 Objetos com o ícone **?** podem ser examinados com `E`.
+
+Depois de sair da caverna, dá para voltar: encostado na boca da caverna, no Mundo Exterior, segure `←`.
 
 Para voltar à fase anterior, encoste na borda esquerda e segure `←` (não vale no Mundo Exterior).
 

@@ -154,8 +154,74 @@ function buildChamberFg() {
   return pix.done()[0];
 }
 
+// ---------------- Sala secreta (à esquerda da câmara)
+// A laje fica no canto esquerdo do paredão, logo depois da estalagmite. Atrás dela: um vestíbulo onde se fica
+// de pé, um túnel de 27 px de altura (só passa agachado) e a sala escondida, alta, com alvenaria talhada,
+// duas pilastras e um nicho com um plinto vazio. O conteúdo da sala ainda será decidido.
+const SECRET = { code: '984', doorX: 33, doorW: 24, doorH: 28 };
+const SEC = { W: 600, floor: 182, tunnelA: 250, tunnelB: 470, lowX: 575, nicheX: 134,
+  shrooms: [[70, 182, 1], [206, 182, 0], [292, 182, 0], [366, 182, 1], [438, 182, 0], [540, 182, 0]] };
+const SEC_SOLIDS = [
+  { x: -40, y: 182, w: 700, h: 60 },    // chão
+  { x: -60, y: -60, w: 82, h: 300 },    // parede da sala, à esquerda
+  { x: 250, y: -60, w: 220, h: 215 },   // teto do túnel: termina em 155 (agachado cabe, de pé não)
+  { x: 470, y: -60, w: 105, h: 160 },   // teto do vestíbulo (100)
+  { x: 575, y: -60, w: 100, h: 214 },   // passagem baixa de volta à câmara (154)
+];
+// numerais romanos talhados acima do nicho
+const GLYPH = { I: ['x', 'x', 'x', 'x', 'x'], V: ['x.x', 'x.x', 'x.x', 'x.x', '.x.'], X: ['x.x', 'x.x', '.x.', 'x.x', 'x.x'] };
+function carve(g, text, cx, y, P) {
+  const w = [...text].reduce((a, ch) => a + (ch === ' ' ? 4 : GLYPH[ch][0].length + 1), -1);
+  let x = Math.round(cx - w / 2);
+  for (const ch of text) {
+    if (ch === ' ') { x += 4; continue; }
+    const m = GLYPH[ch];
+    m.forEach((row, j) => [...row].forEach((c, i) => { if (c === 'x') { rect(g, x + i, y + j, 1, 1, P.hex[0]); rect(g, x + i, y + j + 1, 1, 1, P.hex[4]); } }));
+    x += m[0].length + 1;
+  }
+}
+function buildSecret() {
+  const WW = SEC.W, F = SEC.floor, A = SEC.tunnelA, B = SEC.tunnelB, LX = SEC.lowX, R = rng(984), HH = RK.hall.hex, nx = SEC.nicheX;
+  const bg = new Pix(WW, H);
+  terrain(bg, () => true, { ramp: RK.far, cw: 20, ch: 11, seed: 41, lx: 1, contrast: .7, deep: 0 });
+  const [c, g] = bg.done();
+  // sala: alvenaria de blocos, pilastras e o nicho em arco com o plinto vazio
+  blocks(g, 22, 40, A - 22, F - 40, R, RK.hall);
+  for (const px of [52, 218]) {
+    rect(g, px - 6, 58, 12, F - 58, HH[0]); rect(g, px - 5, 64, 10, F - 66, HH[3]); rect(g, px - 5, 64, 2, F - 66, HH[1]); rect(g, px + 3, 64, 2, F - 66, HH[4]);
+    for (let y = 80; y < F - 6; y += 16) { rect(g, px - 5, y, 10, 1, HH[1]); rect(g, px - 5, y + 1, 10, 1, HH[4]); }
+    rect(g, px - 8, 56, 16, 7, HH[0]); rect(g, px - 7, 57, 14, 5, HH[4]); rect(g, px - 7, 57, 14, 1, HH[5]); rect(g, px - 8, F - 5, 16, 5, HH[0]); rect(g, px - 7, F - 4, 14, 4, HH[3]); rect(g, px - 7, F - 4, 14, 1, HH[5]);
+  }
+  const arch = d => [[nx - 17 + d, F], [nx - 17 + d, 102], [nx - 13 + d, 93 + d], [nx - 6, 89 + d], [nx + 6, 89 + d], [nx + 13 - d, 93 + d], [nx + 17 - d, 102], [nx + 17 - d, F]];
+  polyFill(g, arch(0), HH[0]); polyFill(g, arch(2), '#0c0714'); polyFill(g, arch(4), '#120b1b');
+  rect(g, nx - 10, 150, 20, F - 150, HH[0]); rect(g, nx - 9, 151, 18, F - 151, HH[3]); rect(g, nx - 9, 151, 18, 1, HH[5]); rect(g, nx - 9, 152, 3, F - 152, HH[2]); rect(g, nx + 6, 152, 3, F - 152, HH[4]);
+  rect(g, nx - 11, 147, 22, 4, HH[0]); rect(g, nx - 10, 148, 20, 2, HH[4]); rect(g, nx - 10, 148, 20, 1, HH[5]);
+  carve(g, 'IX VIII IV', nx, 78, RK.hall);
+  for (let i = 0; i < 5; i++) crack(g, 30 + ((R() * 200) | 0), 60 + ((R() * 60) | 0), 8 + R() * 18, HH[0], R);
+  // o túnel foi revestido de pedra, como a sala: atrás de Code se vê a alvenaria, mais escura, sob a rocha bruta
+  blocks(g, A - 4, 146, B - A + 8, F - 146, rng(985), RK.hall);
+  veil(g, A - 4, 146, B - A + 8, F - 146, '#05030a', () => .42);
+  veil(g, B, 96, WW - B, F - 96, '#05030a', () => .12);
+  // rocha da frente: teto, chão e paredes (o teto nunca desce abaixo dos sólidos)
+  const fg = new Pix(WW, H), stal = spikeRow(R, 30, A - 10, 14, 26, 4, 14, 3, 4);
+  const top = x => x < A ? 40 + jag(x, 21, 5, 62) + jag(x, 6, 1.5, 63) + spikeAt(stal, x) : x < B ? 154 - Math.abs(jag(x, 9, 2.5, 64)) : x < LX ? 99 - Math.abs(jag(x, 15, 6, 65)) : 153 - Math.abs(jag(x, 7, 2, 66));
+  terrain(fg, (x, y) => y >= F || y < top(x) || x < 21 + jag(y, 9, 2, 61), { rampAt: (x, y) => y >= F ? RK.floor : RK.cave, cw: 13, ch: 8, seed: 98, lx: 1, deep: 20, contrast: 1.1 });
+  g.drawImage(fg.done()[0], 0, 0);
+  // vida que chegou até aqui: musgo, raízes curtas no teto do túnel, cogumelos e lascas no chão
+  mossTop(g, 24, 46, F, R, .6); mossTop(g, 470, 500, F, R, .5);
+  for (let x = A + 12; x < B - 8; x += 18 + R() * 22) vine(g, x, Math.round(top(x | 0)), 2 + R() * 3, R);
+  for (const [x, y, big] of SEC.shrooms) shroom(g, x, y, big);
+  for (let i = 0; i < 18; i++) chip(g, 30 + ((R() * 540) | 0), F + 1, 2 + ((R() * 4) | 0), 1 + ((R() * 3) | 0), RK.floor);
+  amphora(g, 92, F); stoneHead(g, 176, F + 1, RK.hall);
+  veil(g, 0, 0, WW, 46, '#05030a', (x, y) => .55 - y / 44);
+  veil(g, 0, F + 16, WW, H - F - 16, '#05030a', (x, y) => (y - F - 16) / 40);
+  return c;
+}
+
 // ---------------- Cenário III: a ascensão no escuro
-const PK = { W: 1100, H: 360, death: 338, exitX: 1062, base: 300, top: 92 };
+const PK = { W: 1100, H: 360, death: 338, exitX: 1062, base: 300, top: 92,
+  post: { x: 621, y: 204, stand: 230 },   // lanterna pendurada no poste, sobre o pilar (stand = chão onde Code pega)
+  lamp: { state: 'post' } };   // 'post' | 'hand' | 'ground' (com x, y = chão onde foi deixada)
 const PK_SOLIDS = [
   { x: 0,   y: 300, w: 120, h: 80,  moss: [.5, 1],  sh: [[104, 1]] },
   { x: 150, y: 288, w: 46,  h: 10, f: 1, moss: [.2, 1],  sh: [[8, 0], [36, 1]] },
@@ -203,6 +269,12 @@ function buildParkour() {
   polyFill(g, [[1071, T], [1069, T - 21], [1073, T - 35], [1081, T - 44], [1093, T - 47], [WW, T - 47], [WW, T]], '#020104');
   for (const [x, y, w, h] of [[1062, T - 11, 7, 11], [1061, T - 26, 7, 10], [1065, T - 40, 8, 9], [1075, T - 51, 9, 7]]) { rect(g, x, y, w, h, CV[0]); rect(g, x + 1, y + 1, w - 2, h - 2, CV[3]); rect(g, x + 1, y + 1, w - 2, 1, CV[5]); rect(g, x + 1, y + h - 2, w - 2, 1, CV[1]); }
   vine(g, 1080, T - 46, 12, R); vine(g, 1090, T - 48, 8, R);
+  // a passagem de entrada, embaixo à esquerda: o túnel por onde Code chega do salão (e volta para ele)
+  const B = PK.base;
+  polyFill(g, [[0, B], [0, B - 46], [9, B - 50], [20, B - 47], [29, B - 38], [33, B - 24], [34, B]], CV[0]);
+  polyFill(g, [[0, B], [0, B - 41], [8, B - 45], [18, B - 42], [25, B - 35], [28, B - 22], [29, B]], '#020104');
+  for (const [x, y, w, h] of [[27, B - 12, 7, 12], [28, B - 25, 6, 11], [23, B - 38, 8, 9], [12, B - 50, 10, 7], [0, B - 49, 9, 6]]) { rect(g, x, y, w, h, CV[0]); rect(g, x + 1, y + 1, w - 2, h - 2, CV[3]); rect(g, x + 1, y + 1, w - 2, 1, CV[5]); rect(g, x + 1, y + h - 2, w - 2, 1, CV[1]); }
+  rect(g, 0, B, 30, 1, CV[1]); vine(g, 16, B - 48, 9, R);
   // musgo, cogumelos luminosos e cipós nas plataformas
   PK.shrooms = [];
   for (const s of PK_SOLIDS) {
@@ -276,6 +348,7 @@ function buildMouthFg() {
 
 // ---------------- Cenário V: o mundo exterior (camadas em paralaxe, luz de fim de tarde)
 const OUT = { W: 1500, ground: 168, edge: 1384, edgeY: 122, streamX: 540, streamW: 26 };
+const PAPER = { x: 586, y: 150 };   // easter egg: papel amassado na margem direita do riacho
 // Relevo do planalto: [x onde o patamar começa, altura do topo]. Degraus de até ~24 px se sobem pulando;
 // os paredões mais altos (CLIMBS) só se vencem escalando pelos cipós com E.
 const OUT_STEPS = [[-20, 168], [420, 150], [540, 174], [566, 150], [700, 92], [960, 122], [1100, 168], [1130, 122]];

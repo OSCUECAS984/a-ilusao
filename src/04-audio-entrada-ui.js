@@ -122,30 +122,35 @@ const SFX = {
   burn: () => { hiss(.9, .2, 3500, 'highpass'); hiss(.4, .14, 800); tone(520, .5, 'sawtooth', .06, -300, .05); tone(780, .3, 'square', .04, -500, .1); },
   crackle: () => hiss(.03, .05 + Math.random() * .05, 1500 + Math.random() * 2000),
   fall: () => tone(760, 1.3, 'sine', .05, -620),
+  lamp: () => { tone(1480, .09, 'triangle', .04); tone(990, .14, 'triangle', .03, 0, .05); hiss(.05, .04, 3200); },
+  dial: () => { tone(190, .06, 'square', .045, -40); hiss(.05, .07, 700); },
+  unlock: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, .35, 'triangle', .05, 0, i * .08)); },
+  slide: () => { hiss(1.7, .14, 260, 'lowpass'); tone(62, 1.6, 'sawtooth', .06, -14); tone(95, 1.2, 'sine', .08, -30, .2); },
   blip: f => tone(f * (.95 + Math.random() * .1), .035, 'square', .018),
 };
 const sfx = (n, a) => { try { SFX[n] && SFX[n](a); } catch (e) {} };
 
 // =============================================================== ENTRADA
-const keys = { left: false, right: false, jump: false, act: false, hold: false, ok: false, yes: false, no: false };
+const keys = { left: false, right: false, jump: false, down: false, act: false, hold: false, ok: false, yes: false, no: false };
 const pressed = new Set();
 const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'jump', KeyW: 'jump', Space: 'jump',
-  KeyE: 'act', ShiftLeft: 'hold', ShiftRight: 'hold', Enter: 'ok', NumpadEnter: 'ok', KeyS: 'yes', KeyN: 'no', KeyM: 'mute' };
+  ArrowDown: 'down', KeyE: 'act', ShiftLeft: 'hold', ShiftRight: 'hold', Enter: 'ok', NumpadEnter: 'ok', KeyS: ['down', 'yes'], KeyN: 'no', KeyM: 'mute' };
+// uma tecla pode valer por duas ações (S agacha e também responde "Sim")
+const acts = code => [].concat(KEYMAP[code] || []);
 const hit = a => pressed.has(a);
 const advance = () => hit('act') || hit('ok') || hit('jump') || hit('click');
 addEventListener('keydown', e => {
-  const a = KEYMAP[e.code]; if (!a) return;
+  const as = acts(e.code); if (!as.length || KP.open) return;   // com a fechadura aberta, o teclado é dela
   if (e.target && e.target.tagName === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
   e.preventDefault(); audioInit();
-  if (a === 'mute') { if (!e.repeat) toggleMute(); return; }
-  if (!keys[a]) pressed.add(a);
-  keys[a] = true;
+  if (as[0] === 'mute') { if (!e.repeat) toggleMute(); return; }
+  for (const a of as) { if (!keys[a]) pressed.add(a); keys[a] = true; }
 });
-addEventListener('keyup', e => { const a = KEYMAP[e.code]; if (a && a !== 'mute') keys[a] = false; });
+addEventListener('keyup', e => { for (const a of acts(e.code)) if (a !== 'mute') keys[a] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 const stage = document.getElementById('stage');
 stage.addEventListener('pointerdown', e => {
-  if (e.target.closest('#mute') || e.target.closest('.choice')) return;
+  if (e.target.closest('#mute') || e.target.closest('.choice') || e.target.closest('#keypad')) return;
   audioInit();
   const r = cv.getBoundingClientRect();
   G.click = { x: (e.clientX - r.left) / r.width * W + G.camX, y: (e.clientY - r.top) / r.height * H + G.camY };
@@ -167,6 +172,47 @@ const UI = { dialog: $('dialog'), face: $('d-face'), portrait: $('portrait'), dw
   mFirm: $('m-firm'), mBal: $('m-bal'), mGrip: $('m-grip'), hud: $('hud'), hudScene: $('hud-scene'), goal: $('hud-goal'), goalText: $('hud-goal-text'), hudCycle: $('hud-cycle'), hudDeaths: $('hud-deaths'),
   mute: $('mute'), ending: $('ending'), endLines: $('ending-lines'), endCycle: $('ending-cycle'), title: $('title'), start: $('start'), tCycle: $('t-cycle') };
 const pctx = UI.portrait.getContext('2d'); pctx.imageSmoothingEnabled = false;
+
+// Fechadura de três discos (sala secreta). openKeypad(check) devolve o código certo ou null, se o jogador sair.
+// Enquanto ela está aberta, o teclado do jogo fica parado: números digitam, Backspace apaga, Enter confere, Esc sai.
+const KP = { open: false, val: '', res: null, check: null, busy: false, el: $('keypad') };
+KP.slots = [...KP.el.querySelectorAll('.kp-display span')];
+function kpRender() { KP.slots.forEach((sl, i) => { sl.textContent = KP.val[i] || ''; sl.classList.toggle('cur', i === KP.val.length && !KP.busy); }); }
+function openKeypad(check) {
+  for (const k in keys) keys[k] = false;
+  return new Promise(res => {
+    Object.assign(KP, { open: true, val: '', res, check, busy: false }); KP.el.classList.remove('wrong', 'right'); kpRender(); KP.el.hidden = false;
+  });
+}
+function closeKeypad(v) { KP.open = false; KP.el.hidden = true; const r = KP.res; KP.res = null; if (r) r(v); }
+function kpPress(d) {
+  if (!KP.open || KP.busy) return;
+  if (d === 'esc') { sfx('tick'); closeKeypad(null); return; }
+  if (d === 'del') { if (KP.val) { KP.val = KP.val.slice(0, -1); sfx('tick'); } }
+  else if (d === 'ok') { if (KP.val.length < 3) { sfx('miss'); return; } }
+  else if (KP.val.length < 3) { KP.val += d; sfx('dial'); }
+  kpRender();
+  if (KP.val.length === 3 && (d === 'ok' || /\d/.test(d))) {   // com os três discos girados, a laje é testada sozinha
+    KP.busy = true; kpRender();
+    const ok = KP.check(KP.val);
+    setTimeout(() => {
+      if (!KP.open) return;
+      if (ok) { KP.el.classList.add('right'); sfx('unlock'); setTimeout(() => { KP.busy = false; closeKeypad(KP.val); }, 750); }
+      else { KP.el.classList.add('wrong'); sfx('miss'); setTimeout(() => { KP.el.classList.remove('wrong'); KP.val = ''; KP.busy = false; kpRender(); }, 650); }
+    }, 220);
+  }
+}
+KP.el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { audioInit(); kpPress(b.dataset.d); b.blur(); }));
+addEventListener('keydown', e => {
+  if (!KP.open) return;
+  const m = /^(?:Digit|Numpad)(\d)$/.exec(e.code);
+  if (m) kpPress(m[1]);
+  else if (e.code === 'Backspace') kpPress('del');
+  else if (e.code === 'Enter' || e.code === 'NumpadEnter') kpPress('ok');
+  else if (e.code === 'Escape') kpPress('esc');
+  else return;
+  e.preventDefault();
+});
 
 function toggleMute() {
   AU.muted = !AU.muted; UI.mute.textContent = AU.muted ? 'Som desligado' : 'Som ligado'; UI.mute.setAttribute('aria-pressed', String(AU.muted));
@@ -268,7 +314,7 @@ function meter(show, firm = 0, bal = 1, grip = 1) {
   UI.mBal.classList.toggle('low', bal < .35);
   UI.mGrip.style.width = (clamp(grip, 0, 1) * 100).toFixed(1) + '%'; UI.mGrip.classList.toggle('low', grip < .2);
 }
-const SCENE_NAMES = { chains: 'I · As Correntes e a Fagulha', steps: 'II · Os Primeiros Passos e a Fogueira', parkour: 'III · A Ascensão',
+const SCENE_NAMES = { chains: 'I · As Correntes e a Fagulha', steps: 'II · Os Primeiros Passos e a Fogueira', secret: '??? · A Sala Secreta', parkour: 'III · A Ascensão',
   light: 'IV · A Entrada da Caverna', outside: 'V · O Mundo Exterior', ending: '' };
 function hud() {
   UI.hud.hidden = G.scene === 'title' || G.scene === 'starting' || G.scene === 'ending';

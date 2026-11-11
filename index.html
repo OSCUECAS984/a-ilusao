@@ -84,6 +84,27 @@ kbd{display:inline-block;font-family:var(--f-text);font-weight:400;font-size:1.0
 #toast.show{animation:toast var(--dur,3.5s) linear forwards;}
 @keyframes toast{0%{opacity:0}8%{opacity:1}85%{opacity:1}100%{opacity:0}}
 
+/* fechadura da sala secreta: três discos de pedra e um teclado numérico */
+#keypad{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(46%,340px);padding:1.4cqw 1.8cqw 1.6cqw;
+  display:grid;gap:.55em;justify-items:center;font-size:clamp(13px,2.3cqw,24px);text-align:center;}
+#keypad h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:.8em;letter-spacing:.16em;text-transform:uppercase;color:var(--ember);}
+.kp-display{display:flex;gap:.4em;}
+.kp-display span{width:1.7em;height:2em;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:1.25em;color:var(--bone);
+  background:#2a1d26;border:2px solid #000;box-shadow:inset 0 0 0 2px #4b363f,inset 0 -4px 0 2px #1a1018;}
+.kp-display span.cur{box-shadow:inset 0 0 0 2px var(--ember),inset 0 -4px 0 2px #1a1018;}
+#keypad.wrong .kp-display{animation:kpno .4s steps(4);}
+#keypad.wrong .kp-display span{color:var(--danger);}
+#keypad.right .kp-display span{color:#ffd38a;box-shadow:inset 0 0 0 2px #ffd38a,inset 0 -4px 0 2px #1a1018;}
+@keyframes kpno{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.kp-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:.3em;width:100%;}
+.kp-keys button{font:inherit;font-family:var(--f-display);font-weight:600;font-size:.95em;padding:.15em 0 .25em;color:var(--bone);background:#1d1520;
+  border:2px solid var(--rock-line);box-shadow:0 3px 0 #000;cursor:pointer;touch-action:manipulation;}
+.kp-keys button:hover{background:#2a1f2c;}
+.kp-keys button:active{transform:translateY(2px);box-shadow:0 1px 0 #000;}
+.kp-keys button:focus-visible{outline:2px solid var(--ember);outline-offset:2px;}
+.kp-keys .ok{background:var(--ember);color:#1c1218;border-color:#ffd38a;}
+.kp-hint{margin:0;color:var(--bone-dim);font-size:.75em;}
+
 #qte{position:absolute;left:50%;top:15%;transform:translateX(-50%);width:min(64%,560px);padding:1.2cqw 1.8cqw 1.4cqw;font-size:clamp(13px,2.3cqw,24px);}
 .qte-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4em;}
 #qte-label{font-family:var(--f-display);font-weight:600;letter-spacing:.06em;}
@@ -108,6 +129,7 @@ kbd{display:inline-block;font-family:var(--f-text);font-weight:400;font-size:1.0
 #ending{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1.4cqw;padding:0 10%;text-align:center;pointer-events:none;}
 #ending-lines{display:grid;gap:1.2cqw;width:100%;max-width:34em;}
 #ending-lines p{margin:0;font-size:clamp(14px,2.7cqw,28px);line-height:1.15;color:var(--bone);text-wrap:balance;animation:rise 1.6s steps(12) both;}
+#ending-lines p.voice{font-style:italic;color:var(--ember);}
 #ending-lines p.small{font-size:clamp(11px,1.8cqw,18px);color:var(--bone-dim);letter-spacing:.08em;}
 #ending-cycle{margin:0;font-family:var(--f-display);font-size:clamp(14px,2.6cqw,26px);letter-spacing:.3em;color:var(--ember);text-transform:uppercase;animation:rise 1.6s steps(12) both;}
 @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -134,6 +156,7 @@ kbd{display:inline-block;font-family:var(--f-text);font-weight:400;font-size:1.0
 #touch button{width:76px;height:76px;font-family:var(--f-text);font-weight:400;font-size:38px;line-height:1;color:var(--bone);background:#1d1520;border:2px solid var(--rock-line);
   box-shadow:inset 0 0 0 2px #120c14,0 4px 0 #000;touch-action:none;user-select:none;-webkit-user-select:none;}
 #touch button.on{background:var(--ember);color:#1c1218;}
+@media (max-width:440px){#touch{gap:10px}#touch .pad{gap:8px}#touch button{width:56px;height:56px;font-size:28px}}
 
 @container (max-width:620px){
   #hud-scene{display:none}
@@ -143,6 +166,7 @@ kbd{display:inline-block;font-family:var(--f-text);font-weight:400;font-size:1.0
   #mute{white-space:nowrap}
   #dialog{top:19%;left:2%;right:2%;font-size:14px;padding:6px 8px 10px 6px;gap:8px}
   #qte{top:19%;width:84%}
+  #keypad{width:72%;font-size:14px;padding:8px 10px}
   #toast{bottom:3%}
 }
 @media (prefers-reduced-motion:reduce){#t-name,#dialog-next,#start,.d-face.talk{animation:none}}
@@ -168,6 +192,17 @@ kbd{display:inline-block;font-family:var(--f-text);font-weight:400;font-size:1.0
       <div class="qte-bar" id="qte-bar"><div id="qte-zone"></div><div id="qte-cursor"></div></div>
       <div id="qte-hint">Aperte <kbd>E</kbd> quando o marcador passar pela faixa dourada</div>
     </div>
+    <div id="keypad" class="panel" role="dialog" aria-labelledby="kp-title" hidden>
+      <h2 id="kp-title">Laje de três discos</h2>
+      <div class="kp-display" aria-live="polite"><span></span><span></span><span></span></div>
+      <div class="kp-keys">
+        <button type="button" data-d="1">1</button><button type="button" data-d="2">2</button><button type="button" data-d="3">3</button>
+        <button type="button" data-d="4">4</button><button type="button" data-d="5">5</button><button type="button" data-d="6">6</button>
+        <button type="button" data-d="7">7</button><button type="button" data-d="8">8</button><button type="button" data-d="9">9</button>
+        <button type="button" data-d="del" aria-label="Apagar">⌫</button><button type="button" data-d="0">0</button><button type="button" data-d="ok" class="ok">OK</button>
+      </div>
+      <p class="kp-hint">Digite o código · <kbd>Esc</kbd> sai</p>
+    </div>
     <div id="dialog" class="panel" aria-live="polite">
       <div class="d-face" id="d-face"><canvas id="portrait" width="32" height="32"></canvas></div>
       <div class="d-body"><span id="dialog-who"></span><p id="dialog-text"></p><div id="dialog-choices" hidden></div></div>
@@ -180,11 +215,11 @@ kbd{display:inline-block;font-family:var(--f-text);font-weight:400;font-size:1.0
       <p class="t-sub">O Interior da Caverna</p>
       <button id="start" type="button">Iniciar</button>
       <p class="t-cycle" id="t-cycle" hidden></p>
-      <p class="t-keys"><kbd>←</kbd><kbd>→</kbd> andar · <kbd>Espaço</kbd> pular · <kbd>E</kbd> interagir</p>
+      <p class="t-keys"><kbd>←</kbd><kbd>→</kbd> andar · <kbd>Espaço</kbd> pular · <kbd>↓</kbd> agachar · <kbd>E</kbd> interagir</p>
     </div>
   </div>
   <div id="touch" aria-hidden="true">
-    <div class="pad"><button type="button" data-k="left">◀</button><button type="button" data-k="right">▶</button></div>
+    <div class="pad"><button type="button" data-k="left">◀</button><button type="button" data-k="down">▼</button><button type="button" data-k="right">▶</button></div>
     <div class="pad"><button type="button" data-k="act">E</button><button type="button" data-k="jump">▲</button></div>
   </div>
 </div>
@@ -290,7 +325,8 @@ const VINE = ['#263a1a', '#3c5a22', '#6a8a30'];
 const HP = { skin:'#f1c59c', skinSh:'#d39a6e', skinHi:'#fbdcb8', hair:'#7b4a2c', hairSh:'#573019', hairHi:'#a06a3e',
   tunic:'#d8c5a4', tunicSh:'#b59f7e', tunicDk:'#8f7a5c', tunicHi:'#ebdcc0', belt:'#6b4027', beltHi:'#8e5c38',
   pants:'#cbb894', pantsSh:'#a38c6b', boot:'#74462a', bootSh:'#4e2c18', bootHi:'#93603c',
-  out:'#150c0e', eye:'#1a1014', eyeW:'#fffaf0', lid:'#8a5236', mouth:'#8a2e24', iron:'#5a5f6c', ironHi:'#a3aab6', burn:'#e0502e' };
+  out:'#150c0e', eye:'#1a1014', eyeW:'#fffaf0', lid:'#8a5236', mouth:'#8a2e24', iron:'#5a5f6c', ironHi:'#a3aab6', burn:'#e0502e',
+  burnSk:'#c4483a', burnHi:'#f08a6c', burnDk:'#4a1a14' };   // mão queimada: carne viva, bolha e casca escura
 const NPCP = {
   mistico:   { skin:'#c98e62', skinSh:'#9c6843', skinHi:'#e0aa7c', hair:'#aaa5a0', hairSh:'#76716e', hairHi:'#d8d4ce', tunic:'#d8c5a4' },
   arrogante: { skin:'#e3b189', skinSh:'#b98560', skinHi:'#f4cca6', hair:'#4a2c1c', hairSh:'#2c180e', hairHi:'#6e4830', tunic:'#d8c5a4' },
@@ -498,29 +534,43 @@ function sLeg(r, f, lift, front, tuck) {
   r(hx + f, -4 - lift, 3, 2, bc); r(hx + f, -2 - lift, 4, 2, bc);
   if (front) r(hx + f, -4 - lift, 1, 2, HP.bootHi);
 }
+// Mão queimada: depois do segundo toque no fogo, a mão da frente fica em carne viva até o fim do ciclo.
+// BURNED só fica ligado enquanto o conjunto de sprites "queimado" é gerado (S.burned).
+let BURNED = false;
+function hand(r, x, y, w, h, front) {
+  if (!(front && BURNED)) { r(x, y, w, h, front ? HP.skin : HP.skinSh); return; }
+  r(x, y, w, h, HP.burnSk); r(x + (w > 2 ? 1 : 0), y, 1, 1, HP.burnHi); r(x + w - 1, y + h - 1, 1, 1, HP.burnDk);
+}
 function sArm(r, mode, s, t, L, front, o) {
-  const sc = front ? HP.tunicHi : HP.tunicSh, hc = front ? HP.skin : HP.skinSh, y = -16 + t;
+  const sc = front ? HP.tunicHi : HP.tunicSh, y = -16 + t, hd = (x, yy, w, h) => hand(r, x, yy, w, h, front);
   if (mode === 'down') {
     const x = front ? L - 1 : L + 1, dx = front ? s : -s, mx = x + Math.round(dx / 2);
     r(mx, y, 3, 3, sc); r(x + dx, y + 3, 3, 3, sc);
     if (front) { r(mx - 1, y + 1, 1, 2, HP.tunicSh); r(x + dx - 1, y + 3, 1, 3, HP.tunicSh); }
-    r(x + dx, y + 6, 3, 2, hc); if (o.cuffs !== false) r(x + dx, y + 5, 3, 1, HP.iron);
+    hd(x + dx, y + 6, 3, 2); if (o.cuffs !== false) r(x + dx, y + 5, 3, 1, HP.iron);
   } else if (mode === 'out') {
-    if (front) { r(L + 2, y, 7, 3, sc); r(L + 2, y + 2, 7, 1, HP.tunicSh); r(L + 9, y, 2, 3, hc); } else { r(L - 11, y, 7, 3, sc); r(L - 13, y, 2, 3, hc); }
+    if (front) { r(L + 2, y, 7, 3, sc); r(L + 2, y + 2, 7, 1, HP.tunicSh); hd(L + 9, y, 2, 3); } else { r(L - 11, y, 7, 3, sc); hd(L - 13, y, 2, 3); }
   } else if (mode === 'up') {
-    if (front) { r(L + 3, y - 1, 3, 3, sc); r(L + 5, y - 6, 3, 6, sc); r(L + 5, y - 8, 3, 2, hc); }
-    else { r(L - 7, y - 1, 3, 3, sc); r(L - 9, y - 6, 3, 6, sc); r(L - 9, y - 8, 3, 2, hc); }
-  } else if (mode === 'wall') { r(L + 1, y, 5, 3, sc); r(L + 5, y - 4, 3, 5, sc); r(L + 6, y - 6, 3, 2, hc); }
-  else if (mode === 'eyes') { r(L, y, 3, 3, sc); r(L + 2, y - 4, 3, 5, sc); r(L + 1, y - 8, 6, 4, sc); r(L + 1, y - 5, 6, 1, HP.tunicSh); r(L + 6, y - 8, 2, 3, hc); }
-  else if (mode === 'clutch') { r(L - 1, y, 3, 4, sc); r(L, y + 3, 5, 3, sc); r(L + 5, y + 2, 3, 4, o.burn ? HP.burn : hc); }
-  else if (mode === 'point') { r(L, y, 3, 3, sc); r(L + 2, y + 1, 7, 3, sc); r(L + 9, y + 1, 2, 3, hc); }
+    if (front) { r(L + 3, y - 1, 3, 3, sc); r(L + 5, y - 6, 3, 6, sc); hd(L + 5, y - 8, 3, 2); }
+    else { r(L - 7, y - 1, 3, 3, sc); r(L - 9, y - 6, 3, 6, sc); hd(L - 9, y - 8, 3, 2); }
+  } else if (mode === 'wall') { r(L + 1, y, 5, 3, sc); r(L + 5, y - 4, 3, 5, sc); hd(L + 6, y - 6, 3, 2); }
+  else if (mode === 'eyes') { r(L, y, 3, 3, sc); r(L + 2, y - 4, 3, 5, sc); r(L + 1, y - 8, 6, 4, sc); r(L + 1, y - 5, 6, 1, HP.tunicSh); hd(L + 6, y - 8, 2, 3); }
+  else if (mode === 'clutch') { r(L - 1, y, 3, 4, sc); r(L, y + 3, 5, 3, sc); r(L + 5, y + 2, 3, 4, o.burn ? HP.burn : front ? HP.skin : HP.skinSh); }
+  else if (mode === 'point') { r(L, y, 3, 3, sc); r(L + 2, y + 1, 7, 3, sc); hd(L + 9, y + 1, 2, 3); }
+  else if (mode === 'carry') { r(L - 1, y, 3, 4, sc); r(L + 1, y + 3, 5, 2, sc); r(L + 1, y + 4, 4, 1, HP.tunicSh); hd(L + 5, y + 2, 2, 3); }   // segurando a lanterna à frente
+  else if (mode === 'knee') { r(L + 1, y, 3, 3, sc); r(L + 3, y + 2, 3, 2, sc); hd(L + 6, y + 3, 2, 2); }   // agachado: antebraço apoiado no joelho
 }
 // Vista lateral (olhando para a direita)
 function sidePose(o = {}) {
   return heroCanvas(r => {
-    const b = (o.bob || 0) + (o.kneel ? 5 : 0), L = o.lean || 0, br = o.breath ? 1 : 0, t = b + br;
+    const b = (o.bob || 0) + (o.kneel ? 5 : 0) + (o.crouch ? 6 : 0), L = o.lean || 0, br = o.breath ? 1 : 0, t = b + br;
     sArm(r, o.armB || 'down', o.swB || 0, t, L, false, o);
     if (o.kneel) { r(-6, -4, 6, 3, HP.pantsSh); r(-9, -3, 4, 3, HP.bootSh); r(-1, -6, 6, 3, HP.pants); r(3, -4, 3, 2, HP.pants); r(3, -2, 4, 2, HP.boot); }
+    else if (o.crouch) {   // agachado: pés no chão, joelho da frente para cima, quadril quase nos calcanhares
+      const s = o.cs || 0;
+      r(-7 + s, -2, 4, 2, HP.bootSh); r(-6 + s, -4, 3, 2, HP.pantsSh);
+      r(3 - s, -5, 4, 3, HP.pants); r(6 - s, -5, 1, 2, HP.pantsSh); r(2 - s, -2, 4, 2, HP.boot); r(2 - s, -2, 1, 2, HP.bootHi);
+    }
     else { sLeg(r, o.fB || 0, o.lB || 0, false, o.tuck); sLeg(r, o.fF || 0, o.lF || 0, true, o.tuck); }
     // saia da túnica, faixa com a ponta solta e peito
     r(L - 5, -9 + b, 10, 2, HP.tunic); r(L - 5, -9 + b, 2, 2, HP.tunicSh); r(L - 4, -8 + b, 8, 1, HP.tunicSh);
@@ -701,30 +751,48 @@ function cloudArt(R, w, hMax, C) {
 }
 
 const S = {};
-function buildSprites() {
-  const sp = sidePose;
-  S.idle = [sp({}), sp({ breath: 1 })];
-  S.idleBlink = [sp({ eyes: 'closed' }), sp({ breath: 1, eyes: 'closed' })];
+// Todas as poses de perfil do Code. Geradas duas vezes: a normal (S) e a da mão queimada (S.burned).
+function heroSet() {
+  const sp = sidePose, o = {};
+  o.idle = [sp({}), sp({ breath: 1 })];
+  o.idleBlink = [sp({ eyes: 'closed' }), sp({ breath: 1, eyes: 'closed' })];
   // ciclo de caminhada em 6 quadros: contato, peso, passagem (para cada perna)
   const LEGS = [{ fF: 3, fB: -3, s: -2 }, { fF: 2, fB: -2, lB: 1, bob: 1, s: -1 }, { fF: 0, fB: 0, lB: 2, s: 0 }, { fF: -3, fB: 3, s: 2 }, { fF: -2, fB: 2, lF: 1, bob: 1, s: 1 }, { fF: 0, fB: 0, lF: 2, s: 0 }];
   const walkSet = ex => LEGS.map(l => sp({ ...l, swF: l.s, swB: l.s, ...ex }));
-  S.walk = walkSet({});
-  S.wall = walkSet({ armF: 'wall' }); S.wallIdle = sp({ armF: 'wall', breath: 1 });
-  S.coverWalk = walkSet({ armF: 'eyes', eyes: 'closed' }); S.coverIdle = sp({ armF: 'eyes', eyes: 'closed' });
-  S.wob = [sp({ lean: -1, armF: 'out', armB: 'out', fF: 2, fB: -3, eyes: 'wide' }), sp({ lean: 1, armF: 'out', armB: 'out', fF: -3, fB: 2, eyes: 'wide', mouth: 'open' })];
-  S.jump = [sp({ tuck: 1, armF: 'up', armB: 'up' }), sp({ fF: 2, fB: -2, lF: 2, lB: 1, armF: 'out', armB: 'out' })];
-  S.fall = [sp({ fF: 2, fB: -3, lB: 1, armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 }), sp({ fF: 3, fB: -2, lF: 1, armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 })];
-  S.shock = [sp({ armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open' }), sp({ armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', breath: 1 })];
-  S.awe = sp({ eyes: 'wide', mouth: 'open' });
-  S.kneel = sp({ kneel: 1, eyes: 'squint' });
+  o.walk = walkSet({});
+  o.wall = walkSet({ armF: 'wall' }); o.wallIdle = sp({ armF: 'wall', breath: 1 });
+  o.coverWalk = walkSet({ armF: 'eyes', eyes: 'closed' }); o.coverIdle = sp({ armF: 'eyes', eyes: 'closed' });
+  o.wob = [sp({ lean: -1, armF: 'out', armB: 'out', fF: 2, fB: -3, eyes: 'wide' }), sp({ lean: 1, armF: 'out', armB: 'out', fF: -3, fB: 2, eyes: 'wide', mouth: 'open' })];
+  o.jump = [sp({ tuck: 1, armF: 'up', armB: 'up' }), sp({ fF: 2, fB: -2, lF: 2, lB: 1, armF: 'out', armB: 'out' })];
+  o.fall = [sp({ fF: 2, fB: -3, lB: 1, armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 }), sp({ fF: 3, fB: -2, lF: 1, armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 })];
+  o.shock = [sp({ armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open' }), sp({ armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', breath: 1 })];
+  o.awe = sp({ eyes: 'wide', mouth: 'open' });
+  o.kneel = sp({ kneel: 1, eyes: 'squint' });
+  // agachado: parado (respirando) e andando em 4 quadros curtos
+  o.crouch = [sp({ crouch: 1, armF: 'knee', hx: 1, hy: 1 }), sp({ crouch: 1, armF: 'knee', hx: 1, hy: 1, breath: 1 })];
+  o.crouchWalk = [{ cs: -1 }, { cs: 0, bob: 1 }, { cs: 1 }, { cs: 0, bob: 1 }].map(f => sp({ crouch: 1, armF: 'knee', hx: 1, hy: 1, ...f }));
   // escalada pelos cipós: braços alternando no alto, pernas buscando apoio
-  S.climb = [sp({ armF: 'up', armB: 'wall', fF: 1, lF: 2, fB: -1 }), sp({ armF: 'up', armB: 'wall', fF: 1, lF: 1, fB: -1, bob: 1 }), sp({ armF: 'wall', armB: 'up', fF: 0, fB: 0, lB: 2 }), sp({ armF: 'wall', armB: 'up', fF: 0, fB: 0, lB: 1, bob: 1 })];
-  S.reach = sp({ armF: 'point' });
-  S.hurt = [sp({ armF: 'clutch', armB: 'out', eyes: 'hurt', mouth: 'grit', lean: -1, burn: 1 }), sp({ armF: 'clutch', armB: 'out', eyes: 'hurt', mouth: 'open', burn: 1, bob: 1 })];
-  S.lie = lying(false); S.lieOpen = lying(true);
+  o.climb = [sp({ armF: 'up', armB: 'wall', fF: 1, lF: 2, fB: -1 }), sp({ armF: 'up', armB: 'wall', fF: 1, lF: 1, fB: -1, bob: 1 }), sp({ armF: 'wall', armB: 'up', fF: 0, fB: 0, lB: 2 }), sp({ armF: 'wall', armB: 'up', fF: 0, fB: 0, lB: 1, bob: 1 })];
+  o.reach = sp({ armF: 'point' });
+  // carregando a lanterna da subida: o braço da frente fica dobrado, segurando a alça
+  const cw = LEGS.map(l => sp({ ...l, swB: l.s, armF: 'carry' }));
+  o.carry = {
+    idle: [sp({ armF: 'carry' }), sp({ armF: 'carry', breath: 1 })], walk: cw,
+    jump: [sp({ tuck: 1, armF: 'carry', armB: 'up' }), sp({ fF: 2, fB: -2, lF: 2, lB: 1, armF: 'carry', armB: 'out' })],
+    fall: [sp({ fF: 2, fB: -3, lB: 1, armF: 'carry', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 }), sp({ fF: 3, fB: -2, lF: 1, armF: 'carry', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 })],
+    crouch: [sp({ crouch: 1, armF: 'carry', hx: 1, hy: 1 }), sp({ crouch: 1, armF: 'carry', hx: 1, hy: 1, breath: 1 })],
+    crouchWalk: [{ cs: -1 }, { cs: 0, bob: 1 }, { cs: 1 }, { cs: 0, bob: 1 }].map(f => sp({ crouch: 1, armF: 'carry', hx: 1, hy: 1, ...f })),
+  };
+  o.hurt = [sp({ armF: 'clutch', armB: 'out', eyes: 'hurt', mouth: 'grit', lean: -1, burn: 1 }), sp({ armF: 'clutch', armB: 'out', eyes: 'hurt', mouth: 'open', burn: 1, bob: 1 })];
   // desmaio: cambaleia para trás, cai de joelhos, tomba
-  S.faint = [sp({ lean: -1, eyes: 'closed', armF: 'out', armB: 'out', fF: 1, fB: -2, bob: 1 }), sp({ lean: -1, eyes: 'closed', armF: 'out', armB: 'out', fF: 2, fB: -2, bob: 2, hx: -1, hy: 1 }),
+  o.faint = [sp({ lean: -1, eyes: 'closed', armF: 'out', armB: 'out', fF: 1, fB: -2, bob: 1 }), sp({ lean: -1, eyes: 'closed', armF: 'out', armB: 'out', fF: 2, fB: -2, bob: 2, hx: -1, hy: 1 }),
     sp({ kneel: 1, eyes: 'closed' }), sp({ kneel: 1, eyes: 'closed', bob: 2, hx: 2, hy: 3 }), S.lie];
+  return o;
+}
+function buildSprites() {
+  S.lie = lying(false); S.lieOpen = lying(true);
+  Object.assign(S, heroSet());
+  BURNED = true; S.burned = heroSet(); BURNED = false;
   S.sit = {};
   for (const a of ['down', 'reach', 'hold', 'up', 'strike']) S.sit[a] = backSit({ arm: a });
   S.sitFree = backSit({ arm: 'down', broken: 1 });
@@ -1013,8 +1081,74 @@ function buildChamberFg() {
   return pix.done()[0];
 }
 
+// ---------------- Sala secreta (à esquerda da câmara)
+// A laje fica no canto esquerdo do paredão, logo depois da estalagmite. Atrás dela: um vestíbulo onde se fica
+// de pé, um túnel de 27 px de altura (só passa agachado) e a sala escondida, alta, com alvenaria talhada,
+// duas pilastras e um nicho com um plinto vazio. O conteúdo da sala ainda será decidido.
+const SECRET = { code: '984', doorX: 33, doorW: 24, doorH: 28 };
+const SEC = { W: 600, floor: 182, tunnelA: 250, tunnelB: 470, lowX: 575, nicheX: 134,
+  shrooms: [[70, 182, 1], [206, 182, 0], [292, 182, 0], [366, 182, 1], [438, 182, 0], [540, 182, 0]] };
+const SEC_SOLIDS = [
+  { x: -40, y: 182, w: 700, h: 60 },    // chão
+  { x: -60, y: -60, w: 82, h: 300 },    // parede da sala, à esquerda
+  { x: 250, y: -60, w: 220, h: 215 },   // teto do túnel: termina em 155 (agachado cabe, de pé não)
+  { x: 470, y: -60, w: 105, h: 160 },   // teto do vestíbulo (100)
+  { x: 575, y: -60, w: 100, h: 214 },   // passagem baixa de volta à câmara (154)
+];
+// numerais romanos talhados acima do nicho
+const GLYPH = { I: ['x', 'x', 'x', 'x', 'x'], V: ['x.x', 'x.x', 'x.x', 'x.x', '.x.'], X: ['x.x', 'x.x', '.x.', 'x.x', 'x.x'] };
+function carve(g, text, cx, y, P) {
+  const w = [...text].reduce((a, ch) => a + (ch === ' ' ? 4 : GLYPH[ch][0].length + 1), -1);
+  let x = Math.round(cx - w / 2);
+  for (const ch of text) {
+    if (ch === ' ') { x += 4; continue; }
+    const m = GLYPH[ch];
+    m.forEach((row, j) => [...row].forEach((c, i) => { if (c === 'x') { rect(g, x + i, y + j, 1, 1, P.hex[0]); rect(g, x + i, y + j + 1, 1, 1, P.hex[4]); } }));
+    x += m[0].length + 1;
+  }
+}
+function buildSecret() {
+  const WW = SEC.W, F = SEC.floor, A = SEC.tunnelA, B = SEC.tunnelB, LX = SEC.lowX, R = rng(984), HH = RK.hall.hex, nx = SEC.nicheX;
+  const bg = new Pix(WW, H);
+  terrain(bg, () => true, { ramp: RK.far, cw: 20, ch: 11, seed: 41, lx: 1, contrast: .7, deep: 0 });
+  const [c, g] = bg.done();
+  // sala: alvenaria de blocos, pilastras e o nicho em arco com o plinto vazio
+  blocks(g, 22, 40, A - 22, F - 40, R, RK.hall);
+  for (const px of [52, 218]) {
+    rect(g, px - 6, 58, 12, F - 58, HH[0]); rect(g, px - 5, 64, 10, F - 66, HH[3]); rect(g, px - 5, 64, 2, F - 66, HH[1]); rect(g, px + 3, 64, 2, F - 66, HH[4]);
+    for (let y = 80; y < F - 6; y += 16) { rect(g, px - 5, y, 10, 1, HH[1]); rect(g, px - 5, y + 1, 10, 1, HH[4]); }
+    rect(g, px - 8, 56, 16, 7, HH[0]); rect(g, px - 7, 57, 14, 5, HH[4]); rect(g, px - 7, 57, 14, 1, HH[5]); rect(g, px - 8, F - 5, 16, 5, HH[0]); rect(g, px - 7, F - 4, 14, 4, HH[3]); rect(g, px - 7, F - 4, 14, 1, HH[5]);
+  }
+  const arch = d => [[nx - 17 + d, F], [nx - 17 + d, 102], [nx - 13 + d, 93 + d], [nx - 6, 89 + d], [nx + 6, 89 + d], [nx + 13 - d, 93 + d], [nx + 17 - d, 102], [nx + 17 - d, F]];
+  polyFill(g, arch(0), HH[0]); polyFill(g, arch(2), '#0c0714'); polyFill(g, arch(4), '#120b1b');
+  rect(g, nx - 10, 150, 20, F - 150, HH[0]); rect(g, nx - 9, 151, 18, F - 151, HH[3]); rect(g, nx - 9, 151, 18, 1, HH[5]); rect(g, nx - 9, 152, 3, F - 152, HH[2]); rect(g, nx + 6, 152, 3, F - 152, HH[4]);
+  rect(g, nx - 11, 147, 22, 4, HH[0]); rect(g, nx - 10, 148, 20, 2, HH[4]); rect(g, nx - 10, 148, 20, 1, HH[5]);
+  carve(g, 'IX VIII IV', nx, 78, RK.hall);
+  for (let i = 0; i < 5; i++) crack(g, 30 + ((R() * 200) | 0), 60 + ((R() * 60) | 0), 8 + R() * 18, HH[0], R);
+  // o túnel foi revestido de pedra, como a sala: atrás de Code se vê a alvenaria, mais escura, sob a rocha bruta
+  blocks(g, A - 4, 146, B - A + 8, F - 146, rng(985), RK.hall);
+  veil(g, A - 4, 146, B - A + 8, F - 146, '#05030a', () => .42);
+  veil(g, B, 96, WW - B, F - 96, '#05030a', () => .12);
+  // rocha da frente: teto, chão e paredes (o teto nunca desce abaixo dos sólidos)
+  const fg = new Pix(WW, H), stal = spikeRow(R, 30, A - 10, 14, 26, 4, 14, 3, 4);
+  const top = x => x < A ? 40 + jag(x, 21, 5, 62) + jag(x, 6, 1.5, 63) + spikeAt(stal, x) : x < B ? 154 - Math.abs(jag(x, 9, 2.5, 64)) : x < LX ? 99 - Math.abs(jag(x, 15, 6, 65)) : 153 - Math.abs(jag(x, 7, 2, 66));
+  terrain(fg, (x, y) => y >= F || y < top(x) || x < 21 + jag(y, 9, 2, 61), { rampAt: (x, y) => y >= F ? RK.floor : RK.cave, cw: 13, ch: 8, seed: 98, lx: 1, deep: 20, contrast: 1.1 });
+  g.drawImage(fg.done()[0], 0, 0);
+  // vida que chegou até aqui: musgo, raízes curtas no teto do túnel, cogumelos e lascas no chão
+  mossTop(g, 24, 46, F, R, .6); mossTop(g, 470, 500, F, R, .5);
+  for (let x = A + 12; x < B - 8; x += 18 + R() * 22) vine(g, x, Math.round(top(x | 0)), 2 + R() * 3, R);
+  for (const [x, y, big] of SEC.shrooms) shroom(g, x, y, big);
+  for (let i = 0; i < 18; i++) chip(g, 30 + ((R() * 540) | 0), F + 1, 2 + ((R() * 4) | 0), 1 + ((R() * 3) | 0), RK.floor);
+  amphora(g, 92, F); stoneHead(g, 176, F + 1, RK.hall);
+  veil(g, 0, 0, WW, 46, '#05030a', (x, y) => .55 - y / 44);
+  veil(g, 0, F + 16, WW, H - F - 16, '#05030a', (x, y) => (y - F - 16) / 40);
+  return c;
+}
+
 // ---------------- Cenário III: a ascensão no escuro
-const PK = { W: 1100, H: 360, death: 338, exitX: 1062, base: 300, top: 92 };
+const PK = { W: 1100, H: 360, death: 338, exitX: 1062, base: 300, top: 92,
+  post: { x: 621, y: 204, stand: 230 },   // lanterna pendurada no poste, sobre o pilar (stand = chão onde Code pega)
+  lamp: { state: 'post' } };   // 'post' | 'hand' | 'ground' (com x, y = chão onde foi deixada)
 const PK_SOLIDS = [
   { x: 0,   y: 300, w: 120, h: 80,  moss: [.5, 1],  sh: [[104, 1]] },
   { x: 150, y: 288, w: 46,  h: 10, f: 1, moss: [.2, 1],  sh: [[8, 0], [36, 1]] },
@@ -1062,6 +1196,12 @@ function buildParkour() {
   polyFill(g, [[1071, T], [1069, T - 21], [1073, T - 35], [1081, T - 44], [1093, T - 47], [WW, T - 47], [WW, T]], '#020104');
   for (const [x, y, w, h] of [[1062, T - 11, 7, 11], [1061, T - 26, 7, 10], [1065, T - 40, 8, 9], [1075, T - 51, 9, 7]]) { rect(g, x, y, w, h, CV[0]); rect(g, x + 1, y + 1, w - 2, h - 2, CV[3]); rect(g, x + 1, y + 1, w - 2, 1, CV[5]); rect(g, x + 1, y + h - 2, w - 2, 1, CV[1]); }
   vine(g, 1080, T - 46, 12, R); vine(g, 1090, T - 48, 8, R);
+  // a passagem de entrada, embaixo à esquerda: o túnel por onde Code chega do salão (e volta para ele)
+  const B = PK.base;
+  polyFill(g, [[0, B], [0, B - 46], [9, B - 50], [20, B - 47], [29, B - 38], [33, B - 24], [34, B]], CV[0]);
+  polyFill(g, [[0, B], [0, B - 41], [8, B - 45], [18, B - 42], [25, B - 35], [28, B - 22], [29, B]], '#020104');
+  for (const [x, y, w, h] of [[27, B - 12, 7, 12], [28, B - 25, 6, 11], [23, B - 38, 8, 9], [12, B - 50, 10, 7], [0, B - 49, 9, 6]]) { rect(g, x, y, w, h, CV[0]); rect(g, x + 1, y + 1, w - 2, h - 2, CV[3]); rect(g, x + 1, y + 1, w - 2, 1, CV[5]); rect(g, x + 1, y + h - 2, w - 2, 1, CV[1]); }
+  rect(g, 0, B, 30, 1, CV[1]); vine(g, 16, B - 48, 9, R);
   // musgo, cogumelos luminosos e cipós nas plataformas
   PK.shrooms = [];
   for (const s of PK_SOLIDS) {
@@ -1135,6 +1275,7 @@ function buildMouthFg() {
 
 // ---------------- Cenário V: o mundo exterior (camadas em paralaxe, luz de fim de tarde)
 const OUT = { W: 1500, ground: 168, edge: 1384, edgeY: 122, streamX: 540, streamW: 26 };
+const PAPER = { x: 586, y: 150 };   // easter egg: papel amassado na margem direita do riacho
 // Relevo do planalto: [x onde o patamar começa, altura do topo]. Degraus de até ~24 px se sobem pulando;
 // os paredões mais altos (CLIMBS) só se vencem escalando pelos cipós com E.
 const OUT_STEPS = [[-20, 168], [420, 150], [540, 174], [566, 150], [700, 92], [960, 122], [1100, 168], [1130, 122]];
@@ -1493,30 +1634,35 @@ const SFX = {
   burn: () => { hiss(.9, .2, 3500, 'highpass'); hiss(.4, .14, 800); tone(520, .5, 'sawtooth', .06, -300, .05); tone(780, .3, 'square', .04, -500, .1); },
   crackle: () => hiss(.03, .05 + Math.random() * .05, 1500 + Math.random() * 2000),
   fall: () => tone(760, 1.3, 'sine', .05, -620),
+  lamp: () => { tone(1480, .09, 'triangle', .04); tone(990, .14, 'triangle', .03, 0, .05); hiss(.05, .04, 3200); },
+  dial: () => { tone(190, .06, 'square', .045, -40); hiss(.05, .07, 700); },
+  unlock: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, .35, 'triangle', .05, 0, i * .08)); },
+  slide: () => { hiss(1.7, .14, 260, 'lowpass'); tone(62, 1.6, 'sawtooth', .06, -14); tone(95, 1.2, 'sine', .08, -30, .2); },
   blip: f => tone(f * (.95 + Math.random() * .1), .035, 'square', .018),
 };
 const sfx = (n, a) => { try { SFX[n] && SFX[n](a); } catch (e) {} };
 
 // =============================================================== ENTRADA
-const keys = { left: false, right: false, jump: false, act: false, hold: false, ok: false, yes: false, no: false };
+const keys = { left: false, right: false, jump: false, down: false, act: false, hold: false, ok: false, yes: false, no: false };
 const pressed = new Set();
 const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'jump', KeyW: 'jump', Space: 'jump',
-  KeyE: 'act', ShiftLeft: 'hold', ShiftRight: 'hold', Enter: 'ok', NumpadEnter: 'ok', KeyS: 'yes', KeyN: 'no', KeyM: 'mute' };
+  ArrowDown: 'down', KeyE: 'act', ShiftLeft: 'hold', ShiftRight: 'hold', Enter: 'ok', NumpadEnter: 'ok', KeyS: ['down', 'yes'], KeyN: 'no', KeyM: 'mute' };
+// uma tecla pode valer por duas ações (S agacha e também responde "Sim")
+const acts = code => [].concat(KEYMAP[code] || []);
 const hit = a => pressed.has(a);
 const advance = () => hit('act') || hit('ok') || hit('jump') || hit('click');
 addEventListener('keydown', e => {
-  const a = KEYMAP[e.code]; if (!a) return;
+  const as = acts(e.code); if (!as.length || KP.open) return;   // com a fechadura aberta, o teclado é dela
   if (e.target && e.target.tagName === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter')) return;
   e.preventDefault(); audioInit();
-  if (a === 'mute') { if (!e.repeat) toggleMute(); return; }
-  if (!keys[a]) pressed.add(a);
-  keys[a] = true;
+  if (as[0] === 'mute') { if (!e.repeat) toggleMute(); return; }
+  for (const a of as) { if (!keys[a]) pressed.add(a); keys[a] = true; }
 });
-addEventListener('keyup', e => { const a = KEYMAP[e.code]; if (a && a !== 'mute') keys[a] = false; });
+addEventListener('keyup', e => { for (const a of acts(e.code)) if (a !== 'mute') keys[a] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 const stage = document.getElementById('stage');
 stage.addEventListener('pointerdown', e => {
-  if (e.target.closest('#mute') || e.target.closest('.choice')) return;
+  if (e.target.closest('#mute') || e.target.closest('.choice') || e.target.closest('#keypad')) return;
   audioInit();
   const r = cv.getBoundingClientRect();
   G.click = { x: (e.clientX - r.left) / r.width * W + G.camX, y: (e.clientY - r.top) / r.height * H + G.camY };
@@ -1538,6 +1684,47 @@ const UI = { dialog: $('dialog'), face: $('d-face'), portrait: $('portrait'), dw
   mFirm: $('m-firm'), mBal: $('m-bal'), mGrip: $('m-grip'), hud: $('hud'), hudScene: $('hud-scene'), goal: $('hud-goal'), goalText: $('hud-goal-text'), hudCycle: $('hud-cycle'), hudDeaths: $('hud-deaths'),
   mute: $('mute'), ending: $('ending'), endLines: $('ending-lines'), endCycle: $('ending-cycle'), title: $('title'), start: $('start'), tCycle: $('t-cycle') };
 const pctx = UI.portrait.getContext('2d'); pctx.imageSmoothingEnabled = false;
+
+// Fechadura de três discos (sala secreta). openKeypad(check) devolve o código certo ou null, se o jogador sair.
+// Enquanto ela está aberta, o teclado do jogo fica parado: números digitam, Backspace apaga, Enter confere, Esc sai.
+const KP = { open: false, val: '', res: null, check: null, busy: false, el: $('keypad') };
+KP.slots = [...KP.el.querySelectorAll('.kp-display span')];
+function kpRender() { KP.slots.forEach((sl, i) => { sl.textContent = KP.val[i] || ''; sl.classList.toggle('cur', i === KP.val.length && !KP.busy); }); }
+function openKeypad(check) {
+  for (const k in keys) keys[k] = false;
+  return new Promise(res => {
+    Object.assign(KP, { open: true, val: '', res, check, busy: false }); KP.el.classList.remove('wrong', 'right'); kpRender(); KP.el.hidden = false;
+  });
+}
+function closeKeypad(v) { KP.open = false; KP.el.hidden = true; const r = KP.res; KP.res = null; if (r) r(v); }
+function kpPress(d) {
+  if (!KP.open || KP.busy) return;
+  if (d === 'esc') { sfx('tick'); closeKeypad(null); return; }
+  if (d === 'del') { if (KP.val) { KP.val = KP.val.slice(0, -1); sfx('tick'); } }
+  else if (d === 'ok') { if (KP.val.length < 3) { sfx('miss'); return; } }
+  else if (KP.val.length < 3) { KP.val += d; sfx('dial'); }
+  kpRender();
+  if (KP.val.length === 3 && (d === 'ok' || /\d/.test(d))) {   // com os três discos girados, a laje é testada sozinha
+    KP.busy = true; kpRender();
+    const ok = KP.check(KP.val);
+    setTimeout(() => {
+      if (!KP.open) return;
+      if (ok) { KP.el.classList.add('right'); sfx('unlock'); setTimeout(() => { KP.busy = false; closeKeypad(KP.val); }, 750); }
+      else { KP.el.classList.add('wrong'); sfx('miss'); setTimeout(() => { KP.el.classList.remove('wrong'); KP.val = ''; KP.busy = false; kpRender(); }, 650); }
+    }, 220);
+  }
+}
+KP.el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { audioInit(); kpPress(b.dataset.d); b.blur(); }));
+addEventListener('keydown', e => {
+  if (!KP.open) return;
+  const m = /^(?:Digit|Numpad)(\d)$/.exec(e.code);
+  if (m) kpPress(m[1]);
+  else if (e.code === 'Backspace') kpPress('del');
+  else if (e.code === 'Enter' || e.code === 'NumpadEnter') kpPress('ok');
+  else if (e.code === 'Escape') kpPress('esc');
+  else return;
+  e.preventDefault();
+});
 
 function toggleMute() {
   AU.muted = !AU.muted; UI.mute.textContent = AU.muted ? 'Som desligado' : 'Som ligado'; UI.mute.setAttribute('aria-pressed', String(AU.muted));
@@ -1639,7 +1826,7 @@ function meter(show, firm = 0, bal = 1, grip = 1) {
   UI.mBal.classList.toggle('low', bal < .35);
   UI.mGrip.style.width = (clamp(grip, 0, 1) * 100).toFixed(1) + '%'; UI.mGrip.classList.toggle('low', grip < .2);
 }
-const SCENE_NAMES = { chains: 'I · As Correntes e a Fagulha', steps: 'II · Os Primeiros Passos e a Fogueira', parkour: 'III · A Ascensão',
+const SCENE_NAMES = { chains: 'I · As Correntes e a Fagulha', steps: 'II · Os Primeiros Passos e a Fogueira', secret: '??? · A Sala Secreta', parkour: 'III · A Ascensão',
   light: 'IV · A Entrada da Caverna', outside: 'V · O Mundo Exterior', ending: '' };
 function hud() {
   UI.hud.hidden = G.scene === 'title' || G.scene === 'starting' || G.scene === 'ending';
@@ -1651,12 +1838,12 @@ function hud() {
 
 // ======================================================= ESTADO GLOBAL
 const G = { scene: 'title', time: 0, camX: 0, camY: 0, camTX: null, shake: 0, flash: 0, flashCol: '255,255,255', white: 0, control: false,
-  cycle: 1, deaths: 0, burns: 0, click: { x: 0, y: 0 }, focusIt: null, step: 'stepStone' };
+  outSeen: new Set(), cycle: 1, deaths: 0, burns: 0, click: { x: 0, y: 0 }, focusIt: null, step: 'stepStone' };
 try { G.cycle = Math.max(1, parseInt(localStorage.getItem('ilusao-ciclo'), 10) || 1); } catch (e) {}
 const P = { x: 0, y: 0, vx: 0, vy: 0, hw: 5, h: 32, face: 1, onGround: false, ground: null, coyote: 0, jumpBuf: 0, cut: false, walkT: 0,
-  pose: null, bubble: null, jitter: 0, hidden: false, stepT: 0, sweat: false, burnT: 0 };
+  pose: null, bubble: null, jitter: 0, hidden: false, stepT: 0, sweat: false, burnT: 0, crouch: false, solids: [] };
 function resetPlayer(x, y) {
-  Object.assign(P, { x, y, vx: 0, vy: 0, face: 1, onGround: true, ground: null, coyote: 0, jumpBuf: 0, cut: false, walkT: 0, pose: null, bubble: null, jitter: 0, hidden: false, sweat: false, burnT: 0 });
+  Object.assign(P, { x, y, vx: 0, vy: 0, face: 1, onGround: true, ground: null, coyote: 0, jumpBuf: 0, cut: false, walkT: 0, pose: null, bubble: null, jitter: 0, hidden: false, sweat: false, burnT: 0, crouch: false, h: 32, solids: [], auto: null });
 }
 const val = v => typeof v === 'function' ? v() : v;
 
@@ -1711,6 +1898,7 @@ const PHY = { g: 1000, jump: 330, maxFall: 380, run: 100, accG: 1100, decG: 1500
 const overlaps = s => P.x + P.hw > s.x && P.x - P.hw < s.x + s.w && P.y > s.y && P.y - P.h < s.y + s.h;
 function physics(dt, solids) {
   const n = Math.ceil(dt / (1 / 240)), h = dt / n, wasGround = P.onGround;
+  P.solids = solids;   // guardado para saber se há espaço para Code se levantar
   for (let i = 0; i < n; i++) {
     P.x += P.vx * h;
     for (const s of solids) if (overlaps(s)) {
@@ -1732,21 +1920,45 @@ function physics(dt, solids) {
   if (!P.onGround) P.ground = null;
   if (P.onGround && !wasGround) { sfx('land'); emit(P.x, P.y - 1, 5, { cols: G.step === 'stepGrass' ? ['#9cd452', '#6aae3a'] : ['#8a7a80', '#5a4a52'], sx: 30, sy: 6, vy: -12, life: .35 }); }
 }
+// Agachar: segurando ↓ (ou S) no chão, Code fica mais baixo (cabe em passagens de 27 px) e anda devagar.
+// Ao soltar, ele só se levanta se houver espaço acima da cabeça; sob um teto baixo continua agachado.
+const CROUCH_H = 24, STAND_H = 32;
+function setCrouch(on) { if (P.crouch === on) return; P.crouch = on; P.h = on ? CROUCH_H : STAND_H; if (on) sfx('land'); }
+function canStand() { const h0 = P.h; P.h = STAND_H; const ok = !P.solids.some(overlaps); P.h = h0; return ok; }
 function controlPlayer(dt, opt = {}) {
-  const dir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0), max = opt.max ?? PHY.run;
+  if (keys.down && P.onGround && opt.crouch !== false) setCrouch(true);
+  else if (P.crouch && canStand()) setCrouch(false);
+  const dir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0), max = P.crouch ? Math.min(40, opt.max ?? PHY.run) : opt.max ?? PHY.run;
   const acc = P.onGround ? (dir ? PHY.accG : PHY.decG) : PHY.accA, target = dir * max;
   if (P.vx < target) P.vx = Math.min(target, P.vx + acc * dt); else if (P.vx > target) P.vx = Math.max(target, P.vx - acc * dt);
   if (dir) P.face = dir;
   if (opt.jump !== false) {
     P.coyote = P.onGround ? .1 : Math.max(0, P.coyote - dt);
     P.jumpBuf = hit('jump') ? .13 : Math.max(0, P.jumpBuf - dt);
-    if (P.jumpBuf > 0 && P.coyote > 0) { P.vy = -PHY.jump; P.jumpBuf = 0; P.coyote = 0; P.onGround = false; P.cut = true; sfx('jump'); }
+    if (P.jumpBuf > 0 && P.coyote > 0 && !P.crouch) { P.vy = -PHY.jump; P.jumpBuf = 0; P.coyote = 0; P.onGround = false; P.cut = true; sfx('jump'); }
     if (P.cut && !keys.jump && P.vy < -80) { P.vy *= .45; P.cut = false; }
     if (P.vy >= 0) P.cut = false;
   }
-  if (P.onGround && Math.abs(P.vx) > 5) { P.stepT += Math.abs(P.vx) * dt; if (P.stepT > 26) { P.stepT = 0; sfx(G.step); } }
+  if (P.onGround && Math.abs(P.vx) > 5) { P.stepT += Math.abs(P.vx) * dt; if (P.stepT > (P.crouch ? 16 : 26)) { P.stepT = 0; sfx(G.step); } }
   P.walkT += Math.abs(P.vx) * dt;
 }
+
+// Entradas e saídas de fase: Code anda sozinho alguns passos (o jogador ainda não tem o controle).
+// autoWalk(x) devolve uma promessa que se resolve quando ele chega; o movimento é feito no laço principal,
+// depois da cena, e não usa colisão (os trechos de entrada e saída são planos).
+function autoWalk(tx, speed = 46, o = {}) {
+  if (o.crouch) setCrouch(true);
+  return new Promise(res => { P.auto = { tx, speed, res }; });
+}
+function autoUpdate(dt) {
+  const a = P.auto; if (!a) return;
+  const d = a.tx - P.x, dir = Math.sign(d), step = a.speed * dt;
+  if (Math.abs(d) <= step || !dir) { P.x = a.tx; P.vx = 0; P.auto = null; a.res(); return; }
+  P.face = dir; P.vx = dir * a.speed; P.x += dir * step; P.walkT += step;
+  P.stepT += step; if (P.stepT > (P.crouch ? 16 : 26)) { P.stepT = 0; sfx(G.step); }
+}
+// poeirinha nos pés (ao sair de uma passagem ou levantar)
+function dustPuff(x, y, n = 8) { emit(x, y - 1, n, { cols: G.step === 'stepGrass' ? ['#9cd452', '#6aae3a'] : ['#8a7a80', '#5a4a52', '#7a6a70'], sx: 26, sy: 6, vy: -12, life: .5 }); }
 
 // =========================================================== DESENHO
 function flicker(t = G.time) { return .9 + .06 * Math.sin(t * 11) + .04 * Math.sin(t * 23 + 1.3) + .03 * Math.sin(t * 37); }
@@ -1831,24 +2043,28 @@ function motes(n, wWorld, y0, y1, rgb, seed = 0) {
   }
 }
 // Animações do Code: respirar (com piscadas), andar em 6 quadros, subir e cair no pulo, e poses dos roteiros.
-const POSE_ANIM = { wall: 1, coverWalk: 1, climb: 1 };
+const POSE_ANIM = { wall: 1, coverWalk: 1, climb: 1, crouchWalk: 1 };
 const POSE_RATE = { wob: 6, shock: 3, hurt: 8, fall: 9 };
 const POSE_ONCE = { faint: 5.5 };
 function heroFrame() {
   const t = G.time;
   if (P.pose !== P.lastPose) { P.lastPose = P.pose; P.poseT = t; }
   if (P.pose === 'sitCode') return C1.broken ? S.sitFree : S.sit[C1.arm];
+  const HS = G.handBurned ? S.burned : S;   // com a mão queimada, as poses de perfil vêm do conjunto "queimado"
   if (P.pose) {
-    const v = S[P.pose];
+    const v = HS[P.pose] || S[P.pose];
     if (Array.isArray(v)) {
       if (POSE_ONCE[P.pose]) return v[Math.min(v.length - 1, Math.floor((t - P.poseT) * POSE_ONCE[P.pose]))];
       return v[(POSE_ANIM[P.pose] ? Math.floor(P.walkT / 5) : Math.floor(t * (POSE_RATE[P.pose] || 3))) % v.length];
     }
     return v;
   }
-  if (!P.onGround) return P.vy < -110 ? S.jump[0] : P.vy < 70 ? S.jump[1] : S.fall[Math.floor(t * 9) % 2];
-  if (Math.abs(P.vx) > 5) return S.walk[Math.floor(P.walkT / 5) % 6];
-  return ((t * .31) % 1 > .96 ? S.idleBlink : S.idle)[Math.floor(t * .9) % 2];
+  const CS = lampInHand() ? HS.carry : null;   // com a lanterna na mão, o braço da frente fica segurando a alça
+  if (P.crouch && P.onGround) { const c = CS || HS; return Math.abs(P.vx) > 5 ? c.crouchWalk[Math.floor(P.walkT / 4) % 4] : c.crouch[Math.floor(t * .9) % 2]; }
+  if (!P.onGround) { const c = CS || HS; return P.vy < -110 ? c.jump[0] : P.vy < 70 ? c.jump[1] : c.fall[Math.floor(t * 9) % 2]; }
+  if (Math.abs(P.vx) > 5) return (CS || HS).walk[Math.floor(P.walkT / 5) % 6];
+  if (CS) return CS.idle[Math.floor(t * .9) % 2];
+  return ((t * .31) % 1 > .96 ? HS.idleBlink : HS.idle)[Math.floor(t * .9) % 2];
 }
 const NOFLIP = new Set(['sitCode', 'kneelBack', 'standBack']);
 function blit(spr, x, y, flip) {
@@ -1883,14 +2099,14 @@ function setInspect(list) { INSPECT = list || []; for (const it of INSPECT) it.s
 function updateInspect() {
   if (!G.control || D.active || !INSPECT.length || !P.onGround) { if (PR.tag === 'insp') hidePrompt('insp'); G.focusIt = null; return; }
   let best = null, bd = 1e9;
-  for (const it of INSPECT) { if (it.cond && !it.cond()) continue; const d = Math.abs(P.x - val(it.x)); if (d < (it.r || 18) && d < bd) { bd = d; best = it; } }
+  for (const it of INSPECT) { if ((it.cond && !it.cond()) || (it.near && !it.near())) continue; const d = Math.abs(P.x - val(it.x)); if (d < (it.r || 18) && d < bd) { bd = d; best = it; } }
   G.focusIt = best;
-  if (best) { setPrompt(`<kbd>E</kbd> ${best.verb || 'Examinar'}: ${val(best.label)}`, val(best.x), best.iy - 8, false, 'insp'); if (hit('act')) runInspect(best); }
+  if (best) { setPrompt(`<kbd>E</kbd> ${val(best.verb) || 'Examinar'}: ${val(best.label)}`, val(best.px ?? best.x), best.iy - 8, false, 'insp'); if (hit('act')) runInspect(best); }
   else hidePrompt('insp');
 }
 async function runInspect(it) {
   const id = run; G.control = false; P.vx = 0; hidePrompt('insp'); G.focusIt = null;
-  if (!it.seen) { it.seen = true; G.seenCount = (G.seenCount || 0) + 1; }
+  if (!it.seen) { it.seen = true; if (!it.hidden) G.seenCount = (G.seenCount || 0) + 1; }
   P.face = val(it.x) >= P.x ? 1 : -1; sfx('select');
   await it.run();
   if (id !== run) return;
@@ -1898,7 +2114,7 @@ async function runInspect(it) {
 }
 function drawInspectIcons() {
   for (const it of INSPECT) {
-    if (it.cond && !it.cond()) continue;
+    if ((it.cond && !it.cond()) || it.hidden) continue;   // pontos secretos não têm ícone: só o aviso de perto
     const x = Math.round(val(it.x) - G.camX - 3), y = Math.round(it.iy - G.camY - 10 + Math.sin(G.time * 3 + val(it.x)) * 1.5);
     if (x < -10 || x > W + 10) continue;
     if (G.focusIt === it) glow(x + 3, y + 4, 10, '255,210,140', .35);
@@ -2024,7 +2240,7 @@ function drawChamber() {
   if (fx > -60 && fx < W + 60) bonfire(Math.round(fx), fy);
   if (lpx > -20 && lpx < W + 20) lantern(lpx, CH.lampY);
   motes(46, CH.W, 60, 176, '255,214,160', 1);
-  drawPrisoners(); drawStone(); drawHero(); drawParts();
+  drawSecretDoor(); drawPrisoners(); drawStone(); drawHero(); drawParts();
   ctx.drawImage(LAYER.chamberFg, -Math.round(cx * 1.25), 0);
   const L = [{ x: fx, y: fy - 26, r: 340 * fl, a: 1 }, { x: 330 - cx, y: 138, r: 300 + (fl - .9) * 90, a: .95 }, { x: 140 - cx, y: 150, r: 190, a: .62 },
     { x: P.x - cx, y: P.y - 16, r: 90, a: .55 }, { x: 965 - cx, y: 2, r: 150, a: .8 }, { x: lpx, y: CH.lampY + 6, r: 74 * fl, a: .85 }];
@@ -2113,11 +2329,12 @@ async function c1Activate(what, id) {
 
 // QTE de três rodadas consecutivas (barra de tempo)
 const Q = { active: false, round: 0, pos: 0, dir: 1, speed: 1, zone: [.4, .6], lock: 0, state: '', res: null };
-function runQTE() { return new Promise(res => { Q.active = true; Q.round = 0; Q.res = res; UI.qte.hidden = false; qteRound(); }); }
+// A cada 3 golpes em falso a fechadura "afrouxa": a faixa dourada cresce e o marcador desacelera (até 4 vezes).
+function runQTE() { return new Promise(res => { Q.active = true; Q.round = 0; Q.misses = 0; Q.ease = 0; Q.eased = false; Q.res = res; UI.qte.hidden = false; qteRound(); }); }
 function qteRound() {
-  const w = [.26, .19, .14][Q.round], c = .25 + Math.random() * .5;
+  const e = Q.ease || 0, w = Math.min(.5, [.26, .19, .14][Q.round] * (1 + .3 * e)), c = .25 + Math.random() * .5;
   Q.zone = [clamp(c - w / 2, .05, .95 - w), 0]; Q.zone[1] = Q.zone[0] + w;
-  Q.speed = [.85, 1.15, 1.45][Q.round]; Q.pos = 0; Q.dir = 1; Q.lock = 0; Q.state = '';
+  Q.speed = [.85, 1.15, 1.45][Q.round] * (1 - .12 * e); Q.pos = 0; Q.dir = 1; Q.lock = 0; Q.state = ''; Q.eased = false;
 }
 function updateQTE(dt) {
   if (!Q.active) return;
@@ -2129,7 +2346,10 @@ function updateQTE(dt) {
     if (Q.pos > 1) { Q.pos = 1; Q.dir = -1; } if (Q.pos < 0) { Q.pos = 0; Q.dir = 1; }
     if (hit('act') || hit('jump') || hit('click') || hit('ok')) {
       if (Q.pos >= Q.zone[0] && Q.pos <= Q.zone[1]) { Q.round++; Q.state = 'hit'; Q.lock = .6; C1.strikeT = .5; C1.sparked = false; }
-      else { Q.round = 0; Q.state = 'miss'; Q.lock = .8; sfx('miss'); G.shake = 2; C1.jolt = 1.5; }
+      else {
+        Q.round = 0; Q.state = 'miss'; Q.lock = .8; sfx('miss'); G.shake = 2; C1.jolt = 1.5;
+        Q.misses++; if (Q.misses % 3 === 0 && Q.ease < 4) { Q.ease++; Q.eased = true; Q.lock = 1.3; }
+      }
     }
   }
   UI.qZone.style.left = (Q.zone[0] * 100) + '%'; UI.qZone.style.width = ((Q.zone[1] - Q.zone[0]) * 100) + '%';
@@ -2138,7 +2358,7 @@ function updateQTE(dt) {
   UI.qLabel.textContent = 'Golpe ' + Math.min(3, Q.round + (Q.state === 'hit' ? 0 : 1)) + ' de 3';
   UI.qBar.className = 'qte-bar' + (Q.state ? ' ' + Q.state : '');
   UI.qHint.className = Q.state;
-  UI.qHint.innerHTML = Q.state === 'hit' ? (Q.round >= 3 ? 'As algemas cedem!' : 'Acertou! Mais um golpe.') : Q.state === 'miss' ? 'Golpe em falso! A sequência recomeça.' : 'Aperte <kbd>E</kbd> quando o marcador passar pela faixa dourada';
+  UI.qHint.innerHTML = Q.state === 'hit' ? (Q.round >= 3 ? 'As algemas cedem!' : 'Acertou! Mais um golpe.') : Q.state === 'miss' ? (Q.eased ? 'As algemas estão cedendo: a faixa ficou maior e o marcador, mais lento.' : 'Golpe em falso! A sequência recomeça.') : 'Aperte <kbd>E</kbd> quando o marcador passar pela faixa dourada';
 }
 function updateStrike(dt) {
   if (C1.strikeT <= 0) return;
@@ -2167,11 +2387,20 @@ async function inspectStatues() {
 }
 const INSPECT_STEPS = [
   { id: 'statues', x: 760, iy: 56, r: 110, label: 'As estátuas', cond: () => ST.revealed, run: inspectStatues },
-  { id: 'fire', x: CH.fireX, iy: 128, r: 24, verb: 'Tocar', label: 'A fogueira', cond: () => ST.revealed, run: () => inspectFire() },
+  { id: 'fire', x: CH.fireX, iy: 128, r: 24, verb: () => G.handBurned ? 'Examinar' : 'Tocar', label: 'A fogueira', cond: () => ST.revealed, run: () => inspectFire() },
+  // a laje secreta, no canto esquerdo do paredão: sem ícone, o aviso só aparece com Code encostado nela
+  { id: 'secret', x: SECRET.doorX, px: SECRET.doorX + 46, iy: CH.floor - 34, r: 11, hidden: true, verb: () => G.secretOpen ? 'Entrar' : 'Examinar', label: () => G.secretOpen ? 'A passagem' : 'A parede', cond: () => ST.steady, run: () => secretDoor() },
 ];
 // Tocar o fogo queima na hora, sem pergunta: o real tem efeitos que a sombra não tem.
+// No segundo toque a mão fica queimada até o fim do ciclo; depois disso Code se recusa a tocar de novo.
 async function inspectFire() {
-  P.face = CH.fireX >= P.x ? 1 : -1; P.pose = 'reach'; await wait(.35);
+  P.face = CH.fireX >= P.x ? 1 : -1;
+  if (G.handBurned) {
+    P.pose = 'reach'; await wait(.25); P.pose = null; P.x -= P.face * 4;
+    await say('Nem pensar! Minha mão ainda arde. Essa lição eu já aprendi.', 'code', 'hurt');
+    return;
+  }
+  P.pose = 'reach'; await wait(.35);
   P.pose = 'hurt'; P.burnT = 2.4; sfx('burn'); G.flash = .65; G.flashCol = '255,90,40'; G.shake = 5;
   emit(P.x + P.face * 10, P.y - 16, 20, { cols: ['#ffcf4a', '#f57f24', '#fff6c8'], sx: 50, sy: 40, vy: -40, life: .5, add: true });
   P.x -= P.face * 14; G.burns++;
@@ -2180,7 +2409,13 @@ async function inspectFire() {
     await say('AAAI! Queima! Queima!', 'code', 'hurt');
     await say('As sombras do muro nunca queimaram ninguém. O fogo de verdade, sim.', 'narrador');
     await say('O real tem efeitos que a aparência não tem.', 'narrador');
-  } else await say('De novo?! Tá bom, tá bom... já entendi que é real!', 'code', 'hurt');
+  } else {
+    G.handBurned = true; G.handSmoke = 9;
+    await say('AAAAI! De novo, não!', 'code', 'hurt');
+    P.pose = null; await wait(.4); P.bubble = '!'; await wait(.7); P.bubble = null;
+    await say('Minha mão... ficou vermelha e cheia de bolhas. Isso vai deixar marca.', 'code', 'worried');
+    await say('A sombra do fogo nunca deixou cicatriz. O fogo de verdade deixa.', 'narrador');
+  }
   P.pose = null;
 }
 // Primeiros passos. Três medidores:
@@ -2191,12 +2426,13 @@ async function inspectFire() {
 //              cansa, é preciso soltar E antes de agarrar de novo. Apertar E sem parar enquanto o braço
 //              ainda se recupera é um escorregão que tira equilíbrio.
 function stepsFall() {
-  ST.fallen = 1.4; ST.wob = 0; ST.holding = false; ST.tired = false; ST.slip = 0; ST.gripCd = 0; ST.firm = Math.max(0, ST.firm - .12); P.vx = 0; P.pose = 'lie';
+  ST.fallen = 1.4; ST.wob = 0; ST.holding = false; ST.tired = false; ST.slip = 0; ST.gripCd = 0; ST.firm = Math.max(0, ST.firm - .07); ST.trip = 0; P.vx = 0; P.pose = 'lie';
   sfx('thud'); G.shake = 3; emit(P.x, P.y - 2, 12, { cols: ['#7a6a70', '#5a4a52'], sx: 36, sy: 8, vy: -14, life: .5 });
 }
 function stepsUpdate(dt) {
   const floor = [{ x: -20, y: CH.floor, w: CH.W + 40, h: 40 }];
   if (P.burnT > 0) { P.burnT -= dt; if (Math.random() < dt * 12) emit(P.x + P.face * 9, P.y - 14, 1, { cols: ['#8a8088', '#a49aa0'], sx: 4, sy: 2, vy: -16, life: 1, size: 1, alpha: .6 }); }
+  else if (G.handSmoke > 0) { G.handSmoke -= dt; if (!P.pose && Math.random() < dt * 4) emit(P.x + P.face * 1, P.y - (P.crouch ? 6 : 9), 1, { cols: ['#8a8088', '#a49aa0'], sx: 3, sy: 2, vy: -12, life: 1.2, size: 1, alpha: .45 }); }
   const dF = Math.abs(P.x - CH.fireX); if (dF < 170 && Math.random() < dt * 9 * (1 - dF / 170)) sfx('crackle');
   if (!G.control) { if (!ST.steady) { P.y = CH.floor; P.vx = 0; } else { P.vx = 0; physics(dt, floor); } return; }
   const dir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
@@ -2226,24 +2462,40 @@ function stepsUpdate(dt) {
       if (dir && Math.random() < dt * 6) emit(P.x + dir * 8, P.y - 26, 1, { cols: ['#7a6a70'], sx: 4, sy: 4, vy: 10, g: 60, life: .5 });
     } else {
       ST.grip = Math.min(1, ST.grip + dt * (ST.gripCd > 0 ? .1 : .32));
-      if (dir) { P.vx = dir * 28; P.face = dir; ST.wob += dt * (ST.first ? 1.5 : 1.05 - .62 * ST.firm); if (!ST.first) ST.firm = Math.min(1, ST.firm + dt * .15); P.pose = 'wob'; }
+      if (dir) { P.vx = dir * 28; P.face = dir; ST.wob += dt * (ST.first ? 1.5 : 1.3 - .7 * ST.firm); if (!ST.first) ST.firm = Math.min(1, ST.firm + dt * .15); P.pose = 'wob'; }
       else { P.vx = 0; ST.wob = Math.max(0, ST.wob - dt * .45); P.pose = ST.wob > .35 || ST.slip > 0 ? 'wob' : null; }
     }
+    // tropeços: as pernas ainda não obedecem. Andando, de tempos em tempos o pé falha (mais solto do que
+    // apoiado, e menos conforme a firmeza cresce): o equilíbrio despenca de uma vez e ele cai com frequência.
+    if (!ST.first && dir) {
+      ST.tripT = (ST.tripT ?? 1.2) - dt;
+      if (ST.tripT <= 0) {
+        ST.tripT = 1 + Math.random() * 1.8;
+        if (Math.random() < (ST.holding ? .4 : .85) * (1 - ST.firm * .6)) {
+          // apoiado, às vezes é a mão que escorrega da parede: ele fica solto, balançando, até conseguir se agarrar de novo
+          if (ST.holding && Math.random() < .45) { ST.holding = false; ST.gripCd = .6; ST.slip = .5; ST.wob += .5; emit(P.x + dir * 8, P.y - 26, 4, { cols: ['#7a6a70'], sx: 10, sy: 6, vy: 10, g: 80, life: .5 }); }
+          else ST.wob += ST.holding ? .3 : .42;
+          ST.trip = .45; G.shake = 1.5; sfx('land');
+          emit(P.x + dir * 4, P.y - 1, 4, { cols: ['#8a7a80', '#5a4a52'], sx: 18, sy: 4, vy: -10, life: .4 });
+        }
+      }
+    }
+    if (ST.trip > 0) { ST.trip -= dt; if (!ST.holding) P.pose = 'wob'; P.jitter = ST.trip > .2 ? 1 : 0; } else P.jitter = 0;
     if (P.vx) { P.stepT += Math.abs(P.vx) * dt; if (P.stepT > 20) { P.stepT = 0; sfx('stepStone'); } }
     P.walkT += Math.abs(P.vx) * dt;
     P.x = clamp(P.x + P.vx * dt, 16, CH.wallEnd - 10); P.y = CH.floor;
-    if (ST.wob >= 1) { stepsFall(); return; }
+    if (ST.wob >= 1) { P.jitter = 0; stepsFall(); return; }
     if (!ST.first) meter(true, ST.firm, 1 - ST.wob, ST.grip);
     if (ST.prompt === 'hold' && ST.firm > .2) { hidePrompt('step'); ST.prompt = ''; }
     if (ST.firm >= 1) {
-      ST.steady = true; P.pose = null; meter(false); hidePrompt('step'); sfx('reveal');
+      ST.steady = true; P.pose = null; P.jitter = 0; meter(false); hidePrompt('step'); sfx('reveal');
       toast('Firmeza recuperada! Agora Code anda e pula sozinho.', 3.6); setGoal('Siga em frente pela caverna →');
     }
     if (ST.firm > .5 && !ST.npcTalk) { ST.npcTalk = true; toast('O Arrogante grita: "Volte! As sombras são tudo o que existe!"', 3.6); }
   } else {
     controlPlayer(dt); physics(dt, floor); P.x = clamp(P.x, 16, CH.W - 8);
     if (!ST.revealed && P.x >= 498) reveal(run);
-    if (ST.revealed && !ST.leaving && P.x >= CH.exitX) { ST.leaving = true; G.control = false; fadeTo(1, .7).then(() => go('parkour')); }
+    if (ST.revealed && !ST.leaving && P.x >= CH.exitX) { ST.leaving = true; G.control = false; autoWalk(CH.W + 14, 52); fadeTo(1, .8).then(() => go('parkour')); }   // entra andando no arco escuro
   }
 }
 async function afterFirstFall(id) {
@@ -2271,16 +2523,110 @@ async function reveal(id) {
   setGoal('Examine as estátuas e a fogueira · saia pela passagem →');
 }
 
+// ===================================== SALA SECRETA · à esquerda da câmara
+// No canto esquerdo do paredão há uma laje encaixada, igual à rocha em volta. Encostado nela, Code pode
+// examiná-la: são três discos numerados. O código 984 faz a laje afundar no chão e abre uma passagem baixa,
+// que leva por um túnel estreito (é preciso agachar) até uma sala escondida. O que há na sala será decidido depois.
+async function secretDoor() {
+  const id = run;
+  if (G.secretOpen) {   // passagem aberta: Code se abaixa e entra
+    P.pose = 'standBack'; await wait(.3); P.pose = 'kneelBack'; await wait(.3);
+    await fadeTo(1, .5);
+    if (id !== run) return;
+    go('secret'); return;
+  }
+  P.pose = 'standBack';
+  if (!ST.slabSeen) {
+    ST.slabSeen = true;
+    await say('Esta parte do muro é lisa demais... é uma laje encaixada na rocha.', 'code', 'think');
+    await say('Tem três discos de pedra com números gravados. Parece uma fechadura.', 'code', 'awe');
+  }
+  if (id !== run) return;
+  const code = await openKeypad(v => v === SECRET.code);
+  if (id !== run) return;
+  if (code === null) { P.pose = null; return; }
+  G.secretOpen = true; sfx('slide'); G.shake = 3; ST.doorAnim = true;
+  await until(() => G.secretDoor >= 1);
+  ST.doorAnim = false; P.pose = null; P.face = 1;
+  if (id !== run) return;
+  await say('A laje afundou no chão! Atrás dela tem uma passagem... baixa e apertada.', 'code', 'shock');
+  await say('Segure ↓ (ou S) para agachar e passar por lugares baixos. Aperte E na frente da passagem para entrar.', 'sistema');
+}
+function secretDoorUpdate(dt) {
+  if (!ST.doorAnim) return;
+  G.secretDoor = Math.min(1, G.secretDoor + dt / 1.6); G.shake = Math.max(G.shake, 1.2);
+  if (Math.random() < dt * 30) emit(SECRET.doorX + (Math.random() - .5) * SECRET.doorW, CH.floor - 1, 1, { cols: ['#7a6a70', '#5a4a52', '#8a7a80'], sx: 20, sy: 6, vy: -16, g: 60, life: .7, size: 2, alpha: .7 });
+}
+// laje no paredão: fechada ela quase some na rocha; aberta, afunda no chão e mostra a boca escura do túnel
+function drawSecretDoor() {
+  const x0 = Math.round(SECRET.doorX - SECRET.doorW / 2 - G.camX), F = CH.floor, w = SECRET.doorW, h = SECRET.doorH, top = F - h, k = G.secretDoor || 0, WH = RK.wall.hex;
+  if (x0 < -w - 4 || x0 > W + 4) return;
+  if (k > 0) {
+    rect(ctx, x0 - 1, top - 1, w + 2, h + 1, WH[0]); rect(ctx, x0, top, w, h, '#030207');
+    rect(ctx, x0 + 3, F - 4, w - 6, 4, '#0c0714'); rect(ctx, x0 + 5, F - 5, w - 10, 1, '#120b1b');   // chão do túnel sumindo no escuro
+    rect(ctx, x0 + 2, top + 2, w - 4, 2, '#0a0610');
+  }
+  const sy = top + Math.round(k * (h + 2));
+  if (sy >= F) return;
+  ctx.save(); ctx.beginPath(); ctx.rect(x0 - 1, top - 1, w + 2, F - top + 1); ctx.clip();
+  rect(ctx, x0, sy, w, h, WH[3]); rect(ctx, x0, sy, w, 1, WH[4]); rect(ctx, x0, sy, 1, h, WH[2]); rect(ctx, x0 + w - 1, sy + 1, 1, h - 1, WH[2]);
+  for (let i = 0; i < w; i += 2) if (hash2(i, 7, 5) < .55) rect(ctx, x0 + i, sy, 1, 1, WH[1]);   // junta tracejada: só se vê de perto
+  for (let j = 2; j < h; j += 3) if (hash2(j, 9, 5) < .5) rect(ctx, x0 + w - 1, sy + j, 1, 1, WH[1]);
+  rect(ctx, x0 + 5, sy + 9, 2, 6, WH[2]); rect(ctx, x0 + 14, sy + 4, 6, 1, WH[2]); rect(ctx, x0 + 17, sy + 17, 3, 2, WH[4]);
+  for (let i = 0; i < 3; i++) { const dx = x0 + 6 + i * 5, dy = sy + 11; rect(ctx, dx, dy, 3, 3, WH[1]); rect(ctx, dx + 1, dy + 1, 1, 1, WH[4]); }   // os três discos numerados
+  ctx.restore();
+}
+
+// A cena: um vestíbulo onde se fica de pé, o túnel baixo (agachar) e a sala escondida, mais alta.
+const SECR = {};
+const INSPECT_SECRET = [
+  { id: 'niche', x: SEC.nicheX, iy: 88, r: 22, label: 'O nicho', run: () => talk([
+    ['code', 'awe', 'Uma sala inteira escondida atrás do muro... e um nicho vazio bem no meio da parede.'],
+    ['code', 'think', 'Quem talhou esta sala? E o que guardavam aqui?'],
+  ]) },
+];
+function secretUpdate(dt) {
+  const F = SEC.floor;
+  if (G.control) {
+    controlPlayer(dt); physics(dt, SEC_SOLIDS); P.x = clamp(P.x, 24, SEC.W - 4);
+    // dica na boca do túnel, para quem chega de pé
+    const nearB = P.face < 0 && P.x > SEC.tunnelB && P.x < SEC.tunnelB + 30, nearL = P.face > 0 && P.x > SEC.lowX - 30 && P.x < SEC.lowX;
+    if (!P.crouch && (nearB || nearL)) setPrompt('Segure <kbd>↓</kbd> para agachar', nearB ? SEC.tunnelB + 6 : SEC.lowX - 50, F - 38, false, 'crouch'); else hidePrompt('crouch');
+    if (!SECR.inRoom && P.x < SEC.tunnelA - 10) { SECR.inRoom = true; setGoal('Explore a sala secreta · volte pelo túnel →'); }
+    if (!SECR.leaving && P.x >= SEC.W - 14) { SECR.leaving = true; G.control = false; hidePrompt('crouch'); autoWalk(SEC.W + 18, 30, { crouch: true }); fadeTo(1, .7).then(() => go('steps', 'secret')); }
+  } else { P.vx = 0; physics(dt, SEC_SOLIDS); }
+  G.camX += (clamp(P.x - 200, 0, SEC.W - W) - G.camX) * Math.min(1, dt * 4);
+}
+function drawSecret() {
+  const cx = G.camX, t = G.time, F = SEC.floor, fl = flicker(), nx = SEC.nicheX - cx, ex = SEC.W - cx;
+  ctx.fillStyle = '#05030a'; ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(LAYER.secret, -Math.round(cx), 0);
+  motes(22, SEC.W, 50, 178, '214,190,255', 5);
+  drawHero(); drawParts();
+  const L = [{ x: P.x - cx, y: P.y - 14, r: 92, a: .7 }, { x: nx, y: 112, r: 130, a: .66 + .05 * Math.sin(t * 1.3) }, { x: ex + 8, y: 156, r: 130 * fl, a: .9 }];
+  for (const [mx, my, big] of SEC.shrooms) L.push({ x: mx - cx, y: my - 4, r: big ? 17 : 12, a: .6 });
+  lighting(.84, L);
+  glow(nx, 120, 42, '200,170,255', .14 + .05 * Math.sin(t * 1.3));
+  glow(ex + 6, 160, 64, '255,150,60', .22 * fl);
+  for (const [mx, my, big] of SEC.shrooms) glow(mx - cx, my - 4, big ? 12 : 9, '170,120,255', .3 + .08 * Math.sin(t * 2 + mx));
+  ctx.drawImage(LAYER.vig, 0, 0);
+  drawInspectIcons();
+}
+
 // =========================================== CENÁRIO III · A Ascensão
 // Quase tudo é breu: Code só enxerga um círculo ao redor de si, que cresce um pouco conforme sobe.
 // Aqui não entra luz do dia: só a lanterna e os cogumelos. O sol fica guardado para a boca da caverna.
 function pkSolids() { return [...PK_SOLIDS, PK_CEIL, ...PK.movers]; }
 // Voltar de fase: Code encostado na borda esquerda e o jogador segurando ← por um instante.
-function backEdge(dt, atEdge, label, leave) {
+function backEdge(dt, atEdge, label, leave, before) {
   if (!atEdge || !G.control) { G.backT = 0; hidePrompt('back'); return; }
   setPrompt(`Segure <kbd>←</kbd> ${label}`, P.x + 74, P.y - 40, false, 'back');   // à direita de Code, para não sair da tela
   G.backT = keys.left ? (G.backT || 0) + dt : 0;
-  if (G.backT > .35) { G.control = false; G.backT = 0; hidePrompt('back'); fadeTo(1, .6).then(leave); }
+  if (G.backT > .35) {   // sai andando pela borda (antes, se for o caso, deixa o que carrega)
+    G.control = false; G.backT = 0; hidePrompt('back');
+    const id = run;
+    (async () => { if (before) await before(); if (id !== run) return; P.face = -1; autoWalk(P.x - 34, 52); await fadeTo(1, .7); if (id === run) leave(); })();
+  }
 }
 function pkUpdate(dt) {
   for (const m of PK.movers) {
@@ -2299,10 +2645,11 @@ function pkUpdate(dt) {
     controlPlayer(dt); physics(dt, pkSolids()); P.x = clamp(P.x, 12, PK.W - 10);
     if (P.y > PK.death && !PK.dying) pkDie(run);
     if (!PK.done && !PK.dying && P.x > PK.exitX && P.onGround && P.y <= PK.top) pkExit(run);
-    backEdge(dt, P.x <= 13 && P.onGround && P.y >= PK.base - 1, 'Voltar para o salão', () => go('steps', 'exit'));
+    backEdge(dt, P.x <= 13 && P.onGround && P.y >= PK.base - 1, 'Voltar para o salão', () => go('steps', 'exit'), lampInHand() ? () => putLantern(1) : null);
   }
   const k = clamp((PK.base - P.y) / (PK.base - PK.top), 0, 1); PK.k += (k - PK.k) * Math.min(1, dt * 2.5);
-  PK.rad = 58 + 56 * Math.pow(PK.k, 1.4);
+  PK.lampK = (PK.lampK || 0) + ((lampInHand() ? 1 : 0) - (PK.lampK || 0)) * Math.min(1, dt * 3);
+  PK.rad = 58 + 56 * Math.pow(PK.k, 1.4) + 34 * PK.lampK;   // a lanterna na mão alarga o que Code enxerga
   G.camX += (clamp(P.x - 160, 0, PK.W - W) - G.camX) * Math.min(1, dt * 6);
   G.camY += (clamp(P.y - 126, 0, PK.H - H) - G.camY) * Math.min(1, dt * 5);
 }
@@ -2316,10 +2663,45 @@ async function pkDie(id) {
 }
 async function pkExit(id) {
   PK.done = true; G.control = false; P.vx = 0;
+  if (lampInHand()) {   // no alto, antes da passagem: vira, deixa a lanterna no chão e segue sem ela
+    await putLantern(-1);
+    if (id !== run) return;
+    await say('Code deixa a lanterna para trás. Lá na frente, a luz é outra.', 'narrador');
+    if (id !== run) return;
+    P.face = 1; await wait(.25);
+  }
+  autoWalk(PK.W + 10, 50);   // segue andando para dentro da passagem
   await fadeTo(1, .9);
   if (id !== run) return;
   go('light');
 }
+// ---- A lanterna (opcional): fica no poste sobre o pilar. Code pode pegá-la para enxergar mais longe; ao sair
+// da subida (pelo alto ou de volta ao salão) ele a deixa no chão, e ela fica lá, acesa, até o ciclo recomeçar.
+const lampInHand = () => G.scene === 'parkour' && PK.lamp.state === 'hand';
+function lampPos() {   // topo da lanterna (o desenho pendura 12 px para baixo)
+  const L = PK.lamp;
+  if (L.state === 'post') return [PK.post.x, PK.post.y];
+  if (L.state === 'ground') return [L.x, L.y - 12];
+  const low = P.pose === 'kneel' || (P.crouch && P.onGround);
+  return [Math.round(P.x + P.face * 6), Math.round(low ? P.y - 12 : P.y - 13 + (Math.abs(P.vx) > 5 && Math.floor(P.walkT / 5) % 3 === 1 ? 1 : 0))];
+}
+async function putLantern(dir) {
+  P.vx = 0; P.face = dir; await wait(.15);
+  P.pose = 'kneel'; await wait(.3);
+  PK.lamp = { state: 'ground', x: Math.round(P.x + dir * 9), y: Math.round(P.y) }; sfx('lamp'); dustPuff(PK.lamp.x, P.y, 4);
+  await wait(.5); P.pose = null; await wait(.15);
+}
+async function takeLantern() {
+  const L = PK.lamp; P.face = lampPos()[0] >= P.x ? 1 : -1;
+  P.pose = L.state === 'ground' ? 'kneel' : 'reach'; await wait(.3);
+  PK.lamp = { state: 'hand' }; sfx('lamp'); P.pose = null;
+  toast(L.state === 'ground' ? 'Lanterna de volta na mão.' : 'Você pegou a lanterna: agora enxerga mais longe no escuro.', 3.4);
+}
+const INSPECT_PK = [
+  { id: 'lamp', x: () => lampPos()[0], iy: 0, r: 13, verb: 'Pegar', label: 'A lanterna', run: takeLantern,
+    cond() { if (PK.lamp.state === 'hand') return false; this.iy = lampPos()[1] - 4; return true; },
+    near: () => Math.abs(P.y - (PK.lamp.state === 'post' ? PK.post.stand : PK.lamp.y)) < 3 },   // só pega estando no mesmo chão dela
+];
 function drawParkour() {
   const cx = G.camX, cy = G.camY, t = G.time, fl = flicker();
   ctx.fillStyle = '#05030a'; ctx.fillRect(0, 0, W, H);
@@ -2327,15 +2709,16 @@ function drawParkour() {
   ctx.drawImage(LAYER.parkour, -Math.round(cx), -Math.round(cy));
   hangingChain(778, 14, 88); hangingChain(412, 14, 60);
   for (const m of PK.movers) ctx.drawImage(m.spr, Math.round(m.x - 2 - cx), Math.round(m.y - 5 - cy));
-  lantern(621 - cx, 204 - cy);
-  drawHero(); drawParts();
-  const L = [{ x: P.x - cx, y: P.y - 16 - cy, r: PK.rad, a: 1, core: .3 }, { x: 621 - cx, y: 211 - cy, r: 50 * fl, a: .9 }];
+  const lp = lampPos(), lx = lp[0] - cx, ly = lp[1] - cy;
+  if (!lampInHand()) lantern(lx, ly);
+  drawHero(); if (lampInHand()) lantern(lx, ly); drawParts();
+  const L = [{ x: P.x - cx, y: P.y - 16 - cy, r: PK.rad, a: 1, core: .3 }, { x: lx, y: ly + 7, r: (lampInHand() ? 60 : 50) * fl, a: .9 }];
   for (const s of PK.shrooms) L.push({ x: s[0] - cx, y: s[1] - 4 - cy, r: s[2] ? 15 : 11, a: .6 });
   for (const m of PK.movers) L.push({ x: m.x + m.w - 8 - cx, y: m.y - 3 - cy, r: 12, a: .6 });
   lighting(.985, L);
   // brilhos por cima do breu: o halo do campo de visão, a lanterna e os cogumelos
   glow(P.x - cx, P.y - 16 - cy, PK.rad * .85, '214,196,255', .13);
-  glow(621 - cx, 210 - cy, 34, '255,160,70', .3 * fl);
+  glow(lx, ly + 6, 34, '255,160,70', .3 * fl);
   for (const s of PK.shrooms) glow(s[0] - cx, s[1] - 4 - cy, s[2] ? 12 : 9, '170,120,255', .3 + .08 * Math.sin(t * 2 + s[0]));
   for (const m of PK.movers) glow(m.x + m.w - 8 - cx, m.y - 3 - cy, 9, '170,120,255', .3);
   ctx.drawImage(LAYER.vig, 0, 0);
@@ -2351,13 +2734,17 @@ const INSPECT_L4 = [
 ];
 function lightUpdate(dt) {
   const floor = [{ x: -20, y: CH.floor, w: MOUTH.W + 200, h: 40 }];
-  const glare = smooth(300, MOUTH.trig, P.x); L4.glare = glare;
+  // Depois que Code já esteve lá fora, os olhos se acostumaram: a boca da caverna não ofusca mais e leva de volta ao exterior.
+  const glare = L4.adapted ? 0 : smooth(300, MOUTH.trig, P.x); L4.glare = glare;
   if (G.control) {
     // olhos abertos: o jogador anda e pula; perto da borda esquerda ele pode voltar para a subida
     controlPlayer(dt, { max: 80 * (1 - .4 * glare) }); physics(dt, floor); P.x = Math.max(P.x, 12);
     backEdge(dt, P.x <= 13 && P.onGround, 'Voltar para a subida', () => go('parkour', 'top'));
+    if (L4.adapted) {
+      if (!L4.leaving && P.x >= MOUTH.W - 24) { L4.leaving = true; G.control = false; hidePrompt(); autoWalk(MOUTH.W + 24, 50); fadeTo(1, .8, '#fff4dc').then(() => go('outside', 'cave')); }
+    }
     // a luz fica forte demais: Code fecha os olhos e o jogador perde o controle
-    if (glare >= L4.EYES && P.onGround) { G.control = false; L4.auto = true; hidePrompt(); setGoal('...'); toast('A luz cega! Code cobre os olhos e segue sozinho até a saída.', 3.4); }
+    else if (glare >= L4.EYES && P.onGround) { G.control = false; L4.auto = true; hidePrompt(); setGoal('...'); toast('A luz cega! Code cobre os olhos e segue sozinho até a saída.', 3.4); }
   } else if (L4.auto && !L4.trig) {
     // de olhos fechados: caminha sozinho, devagar, até a saída (sem pular)
     P.face = 1; P.vx = 34; physics(dt, floor); P.walkT += P.vx * dt;
@@ -2366,7 +2753,8 @@ function lightUpdate(dt) {
     if (P.x >= MOUTH.trig) blind(run);
   } else { P.vx = 0; physics(dt, floor); }
   if (!L4.trig) G.white = glare * .5;
-  if (P.x > 330 && !L4.nature) { L4.nature = true; setAmbience('nature', 7); }
+  if (L4.adapted) { const amb = P.x > 330 ? 'nature' : 'cave'; if (L4.amb !== amb) { L4.amb = amb; setAmbience(amb, 4); } }
+  else if (P.x > 330 && !L4.nature) { L4.nature = true; setAmbience('nature', 7); }
   if (L4.whiteUp) G.white = Math.min(1, G.white + dt * .8);
   if (L4.stagger) { L4.st += dt; P.x = L4.bx + Math.sin(L4.st * 4.5) * 8 - L4.st * 6; P.face = Math.cos(L4.st * 4.5) > 0 ? 1 : -1; P.pose = 'wob'; }
   G.camX += (clamp(P.x - 170, 0, MOUTH.W - W) - G.camX) * Math.min(1, dt * 4);
@@ -2438,9 +2826,32 @@ const INSPECT_OUT = [
   { id: 'tree5', x: 300, iy: 120, r: 26, label: 'A árvore', run: () => talk([['code', 'awe', 'Uma árvore de verdade! A estátua era só uma cópia pobre disto.'], ['code', 'happy', 'As folhas se mexem sozinhas com o vento. Nenhuma sombra fazia isso.']]) },
   { id: 'stream', x: OUT.streamX + 13, iy: 128, r: 26, label: 'O riacho', run: () => talk([['code', 'shock', 'Meu rosto... na água!'], ['code', 'think', 'Primeiro as sombras, agora um reflexo. Cada vez mais perto das coisas reais.']]) },
   { id: 'sun', x: 840, iy: 46, r: 20, label: 'O sol', run: async () => { G.white = .7; await say('Não consigo olhar direto para ele... dói!', 'code', 'dazzled'); await say('O sol é o que faz tudo ser visto. Por isso não se pode encará-lo de uma vez: os olhos precisam de tempo.', 'narrador'); } },
+  { id: 'paper', x: PAPER.x, iy: PAPER.y - 4, r: 9, hidden: true, label: 'Um papel', cond: () => G.paperOk && !G.paperTaken, run: readPaper },
   { id: 'vista', x: 1320, iy: 76, r: 18, label: 'A vista', run: () => talk([['code', 'awe', 'Que vista... o mundo não acaba nunca?'], ['code', 'happy', 'Preciso ver mais de perto!']]) },
 ];
-function outGoal() { setGoal(`Atravesse o planalto e examine o que brilhar · ${G.seenCount || 0}/${INSPECT_OUT.length}`); }
+function outGoal() {
+  for (const it of INSPECT_OUT) if (it.seen) G.outSeen.add(it.id);   // o que já foi visto continua visto ao voltar da caverna
+  setGoal(`Atravesse o planalto e examine o que brilhar · ${G.seenCount || 0}/${INSPECT_OUT.filter(it => !it.hidden).length}`);
+}
+// Easter egg: um papel amassado na margem do riacho. Ele está sempre lá, pequeno e sem ícone, mas só dá para
+// examiná-lo depois que Code chega perto do precipício e decide, por conta própria, voltar.
+async function readPaper() {
+  P.pose = 'kneel'; await wait(.45); sfx('pick'); G.paperTaken = true; await wait(.25); P.pose = null;
+  await talk([
+    ['code', 'think', 'Um papel amassado, meio úmido, jogado na grama...'],
+    ['code', 'awe', 'Só tem três números escritos à mão: 9, 8, 4.'],
+    ['code', 'think', 'Alguém esteve aqui antes de mim?'],
+  ]);
+}
+// Easter egg do papel: depois que Code volta por conta própria de perto do precipício, o papel cintila de vez em quando.
+function drawPaper(x, y) {
+  if (G.paperTaken) return;
+  x = Math.round(x); y = Math.round(y);
+  if (x < -8 || x > W + 8) return;
+  rect(ctx, x - 3, y - 2, 6, 2, '#e6dcc4'); rect(ctx, x - 2, y - 3, 3, 1, '#f4ecd8'); rect(ctx, x, y - 2, 1, 2, '#b8ac92'); rect(ctx, x - 2, y - 1, 2, 1, '#9a8e78');
+  if (Math.sin(G.time * .9) > .93) rect(ctx, x + 3, y - 3, 1, 1, '#f4ecd8');   // o vento levanta a pontinha de vez em quando
+  if (G.paperOk && G.time % 3.6 < .28) { rect(ctx, x, y - 7, 1, 3, '#fffbe8'); rect(ctx, x - 1, y - 6, 3, 1, '#fffbe8'); }   // liberado: um brilho rápido de vez em quando
+}
 function outUpdate(dt) {
   const t = G.time;
   if (O5.wake) G.white = Math.max(0, G.white - dt * .28);
@@ -2456,6 +2867,9 @@ function outUpdate(dt) {
       else if (P.y >= cl.bot) { P.y = cl.bot; P.onGround = true; P.pose = null; O5.climb = null; }
     } else {
       controlPlayer(dt); physics(dt, OUT_SOLIDS); P.x = Math.max(P.x, 92);
+      backEdge(dt, P.x <= 93 && P.onGround, 'Entrar na caverna', () => go('light', 'outside'));
+      if (P.x > OUT.edge - 64) G.edgeNear = true;                        // chegou perto do precipício...
+      if (G.edgeNear && !G.paperOk && P.x < OUT.edge - 190) G.paperOk = true;   // ...e voltou por conta própria
       const c = CLIMBS.find(c => Math.abs(P.x - (c.x - 6)) < 9 && P.y > c.top + 4 && P.y <= c.bot + 1);
       if (c && !G.focusIt) {
         if (keys.act || keys.hold) { O5.climb = c; O5.rustle = 0; P.vx = 0; P.vy = 0; hidePrompt('climb'); }
@@ -2548,6 +2962,7 @@ function drawOutside() {
   // aves planando dentro do abismo, abaixo da borda: dão a medida da altura
   for (let i = 0; i < 4; i++) { const bx = OUT.edge + 34 + i * 24 + Math.sin(t * .45 + i * 1.9) * 22 - cx, by = 160 + i * 14 + Math.sin(t * .8 + i) * 5 - cy * .6; ctx.drawImage(S.bird[Math.floor(t * 5 + i) % 3], Math.round(bx), Math.round(by)); }
   ctx.drawImage(LAYER.ground, -Math.round(cx), -Math.round(cy));
+  drawPaper(PAPER.x - cx, PAPER.y - cy);
   // riacho: a água corre entre as duas margens de pedra e despenca pelo paredão
   const stx = Math.round(OUT.streamX - cx), wy = 170 - cy;
   if (stx > -40 && stx < W + 10) {
@@ -2591,6 +3006,7 @@ const ENDING_LINES = [
   'Ninguém sai da caverna de uma só vez.',
   'O olhar precisa de tempo: primeiro as sombras, depois os reflexos, depois as coisas e, só então, o sol.',
   'Code correu em direção à luz e não viu o abismo sob os próprios pés.',
+  { voice: '— Da próxima vez, não vou correr. Ainda havia tanto para olhar lá fora...' },   // a voz de Code: explorar antes do fim
   'Talvez toda verdade alcançada às pressas seja apenas a entrada de outra caverna.',
 ];
 async function endingScript(id) {
@@ -2598,8 +3014,8 @@ async function endingScript(id) {
   await wait(1.2);
   for (const line of ENDING_LINES) {
     if (id !== run) return;
-    const p = document.createElement('p'); p.textContent = line; UI.endLines.appendChild(p);
-    await wait(1.7 + line.length * .03);
+    const p = document.createElement('p'), text = line.voice || line; p.textContent = text; if (line.voice) p.className = 'voice'; UI.endLines.appendChild(p);
+    await wait(1.7 + text.length * .03);
   }
   const s = document.createElement('p'); s.className = 'small'; s.textContent = 'Inspirado na Alegoria da Caverna · Platão, A República, Livro VII'; UI.endLines.appendChild(s);
   await wait(1.6);
@@ -2626,7 +3042,7 @@ const Scenes = {
     enter(id) {
       resetPlayer(PRIS.code, CH.floor); P.pose = 'sitCode'; G.step = 'stepStone';
       Object.assign(C1, { arm: 'down', stone: 'off', broken: false, jolt: 0, strikeT: 0, sel: false, focus: 1, busy: false, talkIdx: { mistico: 0, arrogante: 0 } });
-      G.camX = 0; G.camY = 0; G.camTX = null; G.control = false; G.white = 0; G.deaths = 0; G.burns = 0; G.seenCount = 0; PK.intro = false; fade.a = 1; parts.length = 0;
+      G.camX = 0; G.camY = 0; G.camTX = null; G.control = false; G.white = 0; G.deaths = 0; G.burns = 0; G.handBurned = false; G.handSmoke = 0; G.secretOpen = false; G.secretDoor = 0; G.wentOut = false; G.edgeNear = false; G.paperOk = false; G.paperTaken = false; G.outSeen = new Set(); G.seenCount = 0; PK.intro = false; PK.lamp = { state: 'post' }; fade.a = 1; parts.length = 0;
       setAmbience('cave', 3); chainsScript(id);
     },
     update: chainsUpdate,
@@ -2634,11 +3050,25 @@ const Scenes = {
   },
   steps: {
     enter(id, from) {
-      if (from === 'exit') {   // voltando da subida: Code já está firme e já viu as estátuas
-        resetPlayer(CH.exitX - 24, CH.floor); P.face = -1; ST.leaving = false; ST.steady = true; ST.revealed = true; ST.first = false;
-        G.camTX = null; G.camX = clamp(P.x - 170, 0, CH.W - W); G.camY = 0; G.control = false; fade.a = 1; parts.length = 0; G.step = 'stepStone';   // camY zerado: a subida deixa a câmera rolada para baixo
+      if (from === 'exit' || from === 'secret') {   // voltando da subida (já firme, já viu as estátuas) ou da sala secreta
+        const sec = from === 'secret';
+        // da subida: sai andando do arco escuro; da sala secreta: sai engatinhando da passagem, levanta, vira e dá uns passos
+        resetPlayer(sec ? SECRET.doorX : CH.exitX + 14, CH.floor); P.face = sec ? 1 : -1; ST.leaving = false; ST.steady = true; ST.first = false; ST.doorAnim = false;
+        if (!sec) ST.revealed = true;
+        if (sec) P.pose = 'kneelBack';
+        G.camTX = null; G.camX = clamp((sec ? P.x : CH.exitX - 24) - 170, 0, CH.W - W); G.camY = 0; G.control = false; fade.a = 1; parts.length = 0; G.step = 'stepStone';   // camY zerado: a subida deixa a câmera rolada para baixo
         setInspect(INSPECT_STEPS); setAmbience('cave', 2);
-        (async () => { await fadeTo(0, .6); if (id !== run) return; setGoal('Examine o salão · saia pela passagem →'); G.control = true; })();
+        setGoal(ST.revealed ? 'Examine o salão · saia pela passagem →' : 'Siga em frente pela caverna →');
+        (async () => {
+          if (sec) {
+            await fadeTo(0, .5); if (id !== run) return;
+            await wait(.25); P.pose = 'standBack'; dustPuff(P.x, CH.floor); sfx('land');
+            await wait(.4); P.pose = null; P.face = 1; await wait(.15);
+            await autoWalk(SECRET.doorX + 22, 40);
+          } else { fadeTo(0, .6); await autoWalk(CH.exitX - 24, 50); }
+          if (id !== run) return;
+          G.control = true;
+        })();
         return;
       }
       Object.assign(ST, { firm: 0, wob: 0, grip: 1, gripCd: 0, holding: false, tired: false, slip: 0, fallen: 0, first: true, steady: false, revealed: false, leaving: false, npcTalk: false, prompt: 'try' });
@@ -2647,26 +3077,50 @@ const Scenes = {
       setPrompt('Tente andar <kbd>→</kbd>', 0, 0, true, 'step');
     },
     update(dt) {
-      stepsUpdate(dt);
+      stepsUpdate(dt); secretDoorUpdate(dt);
       const tx = G.camTX ?? clamp(P.x - 170, 0, CH.W - W);
       G.camX += (tx - G.camX) * Math.min(1, dt * 3.5);
     },
     draw: drawChamber,
   },
+  secret: {
+    enter(id) {
+      resetPlayer(SEC.W + 8, SEC.floor); P.face = -1; P.solids = SEC_SOLIDS; G.camX = SEC.W - W; G.camY = 0; G.control = false; fade.a = 1; parts.length = 0; G.step = 'stepStone';
+      Object.assign(SECR, { leaving: false, inRoom: false });
+      setInspect(INSPECT_SECRET); setAmbience('cave', 2);
+      setGoal('Agache e atravesse o túnel ←');
+      (async () => {
+        // sai agachado da passagem baixa, levanta no vestíbulo e olha em volta
+        fadeTo(0, .7); await autoWalk(SEC.W - 34, 30, { crouch: true });
+        if (id !== run) return;
+        setCrouch(false); dustPuff(P.x, SEC.floor, 5); await wait(.3);
+        P.bubble = '?'; P.face = 1; await wait(.45); P.face = -1; await wait(.45); P.bubble = null;
+        if (id !== run) return;
+        if (!G.secretSeen) { G.secretSeen = true; card('???', 'A Sala Secreta'); }
+        G.control = true;
+      })();
+    },
+    update: secretUpdate,
+    draw: drawSecret,
+  },
   parkour: {
     enter(id, from) {
       G.control = false; G.white = 0; fade.a = 1; parts.length = 0; G.step = 'stepStone';
       Object.assign(PK, { dying: false, done: false, k: 0, rad: 58 });
-      if (from === 'top') {   // voltando da entrada da caverna: chega no alto, perto da passagem
-        resetPlayer(PK.exitX - 34, PK.top); P.face = -1; PK.k = 1; PK.rad = 114;
-      } else resetPlayer(30, PK.base);
+      const top = from === 'top';
+      if (top) {   // voltando da entrada da caverna: sai da passagem do alto, andando para a esquerda
+        resetPlayer(PK.exitX + 22, PK.top); P.face = -1; PK.k = 1; PK.rad = 114;
+      } else resetPlayer(-10, PK.base);   // vindo do salão: entra pela borda esquerda
       G.camX = clamp(P.x - 160, 0, PK.W - W); G.camY = clamp(P.y - 126, 0, PK.H - H);
       PK.movers = MOVERS_DEF.map(m => ({ ...m, dx: 0, dy: 0, spr: LAYER['mover' + m.x] }));
-      setInspect([]); setAmbience('cave', 2);
+      if (PK.lamp.state === 'hand') PK.lamp = { state: 'post' };   // caiu nas estacas com ela: a fase recomeça e a lanterna volta ao poste
+      PK.lampK = 0; setInspect(INSPECT_PK); setAmbience('cave', 2);
+      setGoal('Suba no escuro até a passagem, no alto à direita');
       (async () => {
-        await fadeTo(0, .6);
+        fadeTo(0, .7); await autoWalk(top ? PK.exitX - 34 : 30, 46);
         if (id !== run) return;
-        setGoal('Suba no escuro até a passagem, no alto à direita');
+        if (!top && !PK.intro) { P.bubble = '?'; await wait(.7); P.bubble = null; }   // primeira vez no escuro: hesita
+        if (id !== run) return;
         if (!PK.intro) { PK.intro = true; card('Cenário III', 'A Ascensão'); toast('Você só enxerga o que está perto. Espaço pula (segure para ir mais alto). Estacas reiniciam a fase.', 5.5); }
         G.control = true;
       })();
@@ -2675,28 +3129,63 @@ const Scenes = {
     draw: drawParkour,
   },
   light: {
-    enter(id) {
-      resetPlayer(24, CH.floor); G.camX = 0; G.camY = 0; G.control = false; G.white = 0; fade.a = 1; parts.length = 0; G.step = 'stepStone';
-      Object.assign(L4, { trig: false, whiteUp: false, stagger: false, glare: 0, nature: false, auto: false, EYES: .7 });
-      setInspect(INSPECT_L4); setAmbience('cave', 2);
-      (async () => { await fadeTo(0, 1); if (id !== run) return; card('Cenário IV', 'A Entrada da Caverna'); setGoal('Caminhe em direção à luz →'); G.control = true; })();
+    enter(id, from) {
+      Object.assign(L4, { trig: false, whiteUp: false, stagger: false, glare: 0, nature: false, auto: false, EYES: .7, adapted: !!G.wentOut, leaving: false, amb: '' });
+      setInspect(INSPECT_L4);
+      if (from === 'outside') {   // voltando do mundo exterior: entra pela boca, vindo da claridade
+        resetPlayer(MOUTH.W + 14, CH.floor); P.face = -1; G.camX = MOUTH.W - W; G.camY = 0; G.control = false; G.white = 0; fade.a = 1; fade.color = '#fff4dc'; parts.length = 0; G.step = 'stepStone';
+        setGoal('Explore a caverna de novo · a saída para fora fica à direita →');
+        (async () => {
+          fadeTo(0, .9).then(() => { fade.color = '#000'; }); await autoWalk(MOUTH.trig - 30, 46);
+          if (id !== run) return;
+          G.control = true;
+        })();
+        return;
+      }
+      resetPlayer(-12, CH.floor); G.camX = 0; G.camY = 0; G.control = false; G.white = 0; fade.a = 1; parts.length = 0; G.step = 'stepStone';
+      setAmbience('cave', 2);
+      setGoal(L4.adapted ? 'Volte para o mundo exterior →' : 'Caminhe em direção à luz →');
+      (async () => {
+        // sai da subida andando e para, espantado com a claridade lá na frente
+        fadeTo(0, 1); await autoWalk(34, 42);
+        if (id !== run) return;
+        card('Cenário IV', 'A Entrada da Caverna');
+        P.pose = 'awe'; P.bubble = '!'; await wait(.9); P.pose = null; P.bubble = null;
+        if (id !== run) return;
+        G.control = true;
+      })();
     },
     update: lightUpdate,
     draw: drawLight,
   },
   outside: {
-    enter(id) {
-      resetPlayer(118, OUT.ground); P.pose = 'lie'; G.camX = 0; G.camY = 0; G.control = false; G.white = 1; fade.a = 1; parts.length = 0; G.step = 'stepGrass'; G.seenCount = 0;
-      Object.assign(O5, { wake: true, fall: false, crumb: false, inS: false, climb: null, rustle: 0, splT: 0, leafT: 0, leaves: [], fishT: 2, fish: null,
+    enter(id, from) {
+      const back = from === 'cave';   // voltando de dentro da caverna: sai pela boca andando, sem desmaio
+      resetPlayer(back ? 66 : 118, OUT.ground); P.pose = back ? null : 'lie'; G.camX = 0; G.camY = 0; G.control = false; G.white = back ? 0 : 1; fade.a = 1; parts.length = 0; G.step = 'stepGrass';
+      G.wentOut = true;
+      Object.assign(O5, { wake: !back, fall: false, crumb: false, inS: false, climb: null, rustle: 0, splT: 0, leafT: 0, leaves: [], fishT: 2, fish: null,
         stag: { x: 640, t: 2, look: false, alert: false },
         rabbits: [{ x: 370, a: 334, b: 412, dir: 1, air: 0, t: 1 }, { x: 800, a: 760, b: 900, dir: -1, air: 0, t: 2 }, { k: 'squirrel', x: 1196, a: 1150, b: 1262, dir: 1, air: 0, t: 1.5 }],
         perch: { x: 287, y: 36, fly: false } });
-      setInspect(INSPECT_OUT); setAmbience('nature', 3); G.onInspected = outGoal; setGoal('Recupere os sentidos...');
+      setInspect(INSPECT_OUT); setAmbience('nature', 3); G.onInspected = outGoal;
+      for (const it of INSPECT_OUT) it.seen = G.outSeen.has(it.id);
+      G.seenCount = INSPECT_OUT.filter(it => it.seen && !it.hidden).length;
+      if (back) {
+        outGoal();
+        (async () => {
+          fadeTo(0, .8).then(() => { fade.color = '#000'; }); await autoWalk(126, 46);
+          if (id !== run) return;
+          G.control = true;
+        })();
+        return;
+      }
+      setGoal('Recupere os sentidos...');
       (async () => {
         await fadeTo(0, 1.6);
         if (id !== run) return;
         card('Cenário V', 'O Mundo Exterior');
-        await wait(2.2); P.pose = 'lieOpen'; await wait(.9); P.pose = 'kneel'; await wait(.7); P.pose = null; O5.wake = false;
+        await wait(2.2); P.pose = 'lieOpen'; await wait(.9); P.pose = 'kneel'; await wait(.7); P.pose = null; dustPuff(P.x, OUT.ground, 6); O5.wake = false;
+        await wait(.4); await autoWalk(P.x + 22, 30);   // primeiros passos na grama, ainda devagar
         if (id !== run) return;
         await say('...Onde estou?', 'code', 'dazzled');
         await say('Cores. Água que cai. Criaturas vivas. Tudo é tão nítido!', 'code', 'happy');
@@ -2716,7 +3205,7 @@ const Scenes = {
 };
 // from: de onde Code chega ('top' = volta do Cenário IV para o alto da subida; 'exit' = volta da subida para o salão)
 function go(name, from) {
-  run++; waits.length = 0; G.backT = 0;
+  run++; waits.length = 0; G.backT = 0; P.auto = null;
   if (D.active) { D.active = false; D.res = null; D.choices = null; UI.dialog.classList.remove('open'); }
   hidePrompt(); meter(false); Q.active = false; UI.qte.hidden = true; setInspect([]); G.onInspected = null;
   UI.toast.hidden = true; UI.toast.classList.remove('show');   // aviso da fase anterior não atravessa para a próxima
@@ -2738,6 +3227,7 @@ function update(dt) {
   G.time += dt;
   const talking = updateDialog(dt);
   Scenes[G.scene].update(talking ? 0 : dt);
+  if (!talking) autoUpdate(dt);
   if (!talking) updateInspect();
   updateParts(dt); tickWaits(); updateFade(dt); audioTick(G.time);
   G.shake = Math.max(0, G.shake - dt * 10); G.flash = Math.max(0, G.flash - dt * 2.2);
@@ -2768,6 +3258,7 @@ LAYER.parkour = buildParkour();
 for (const m of MOVERS_DEF) LAYER['mover' + m.x] = buildMover(m);
 LAYER.mouth = buildMouth();
 LAYER.mouthFg = buildMouthFg();
+LAYER.secret = buildSecret();
 LAYER.vig = buildVignette();
 buildOutside();
 O5.fallFrames = waterFrames(VALLEY.fall.w, VALLEY.fall.h, 6, 3);
@@ -2776,7 +3267,7 @@ OUT.tufts = []; { const R = rng(61); for (let x = 130; x < OUT.edge - 70; x += 1
 if (G.cycle > 1) { UI.tCycle.hidden = false; UI.tCycle.textContent = 'Você já passou por ' + (G.cycle - 1) + (G.cycle - 1 === 1 ? ' ciclo.' : ' ciclos.'); }
 Scenes.title.enter(); hud();
 // ganchos de depuração: tick(n, dt) avança n quadros à mão (útil quando a aba está em segundo plano)
-window.__ilusao = { G, P, go, keys, pressed, ST, PK, O5, C1, D, L4, S, LAYER, fade, portrait, PK_SOLIDS, OUT, CLIMBS, outTop, bootMs: Math.round(performance.now() - BOOT0), INSPECT: () => INSPECT, tick(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { update(dt); pressed.clear(); } draw(); } };
+window.__ilusao = { G, P, go, keys, pressed, ST, PK, Q, runQTE, O5, C1, D, L4, S, LAYER, KP, SEC, SECR, SECRET, kpPress, fade, portrait, PK_SOLIDS, OUT, CLIMBS, outTop, bootMs: Math.round(performance.now() - BOOT0), INSPECT: () => INSPECT, tick(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) { update(dt); pressed.clear(); } draw(); } };
 requestAnimationFrame(frame);
 })();
 

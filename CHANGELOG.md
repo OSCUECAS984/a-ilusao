@@ -1,5 +1,20 @@
 # Histórico de versões
 
+## v3.2.0 · 11/11/2026
+
+- **Mão queimada (Cenário II):** no segundo toque na fogueira, a mão de Code fica queimada (vermelha e com bolhas) até o fim do ciclo, em todas as poses, e solta um fio de fumaça por alguns segundos. A partir daí ele se recusa a tocar no fogo de novo, e o ponto passa a se chamar "Examinar".
+- **Agachar:** segure `↓` (ou `S`) no chão para agachar. Agachado, Code fica mais baixo, anda devagar e não pula; sob um teto baixo ele continua agachado mesmo soltando a tecla. Botão ▼ nos controles de toque.
+- **Sala secreta:** no canto esquerdo do paredão das sombras há uma laje escondida, sem ícone. Encostado nela, aparece "Examinar: A parede" e uma fechadura de três discos. O código **984** faz a laje afundar no chão; pela passagem, Code atravessa um túnel estreito (é preciso agachar) até uma sala talhada com um nicho vazio. O conteúdo da sala ainda será decidido. Para voltar, basta atravessar o túnel de novo para a direita.
+- **Lanterna da subida (opcional):** no Cenário III, a lanterna do poste sobre o pilar agora pode ser pega com `E`. Na mão, ela ilumina Code e alarga bastante o que ele enxerga no escuro; Code anda, pula e agacha segurando a alça. No alto, antes da passagem, ele se vira, ajoelha e deixa a lanterna no chão ("lá na frente, a luz é outra") e segue sem ela. Ela fica acesa onde foi deixada e pode ser pega de novo ao voltar. Se Code sair pela esquerda com ela, também a deixa no chão; se cair nas estacas, ela volta ao poste.
+- **QTE das correntes mais justo:** a cada 3 golpes em falso as algemas "afrouxam": a faixa dourada fica 30% maior e o marcador 12% mais lento (acumula até 4 vezes), com um aviso na barra.
+- **Aprender a andar é mais difícil:** Code tropeça de tempos em tempos enquanto anda (mais solto do que apoiado, e menos conforme a Firmeza cresce). Às vezes é a mão que escorrega da parede e ele fica balançando até se agarrar de novo. Ele cai bem mais vezes, mas cada queda tira menos Firmeza.
+- **Voltar para a caverna:** no Mundo Exterior, encostado na boca da caverna, segure ← para entrar de novo. Os olhos já se acostumaram: a entrada não ofusca mais, e dá para descer pela subida, pelo salão e até a sala secreta. Para sair, é só caminhar até a boca. O que já foi examinado lá fora continua contado.
+- **Easter egg:** um papel amassado, pequeno e sem ícone, jogado na margem direita do riacho. Ele sempre está lá, mas só pode ser examinado depois que Code chega perto do precipício e decide, por conta própria, voltar. Nele estão escritos três números: 9, 8, 4.
+- **Uma fala de Code no final:** o final continua o mesmo (Code não vê o abismo e cai), mas entre as falas do encerramento aparece a voz dele, em itálico: "Da próxima vez, não vou correr. Ainda havia tanto para olhar lá fora..."
+- **Papel do riacho mais fácil de notar:** depois que Code chega perto do precipício e volta por conta própria, o papel solta um brilho rápido a cada 3,6 s. Antes disso ele continua só um papelzinho na grama.
+- **Passagem na base da subida:** a parede da esquerda do Cenário III ganhou um arco escuro, com pedras de moldura e cipó. Code entra e sai da subida por ele, em vez de atravessar a rocha.
+- **Entradas e saídas animadas:** ao trocar de fase, Code anda sozinho alguns passos antes de o jogador assumir. Ele sai andando pelo arco do salão e pela passagem do alto da subida, entra pela borda ao voltar de fase, e na Entrada da Caverna para espantado com a luz (!). Na subida, na primeira vez, hesita no escuro (?). Na sala secreta, sai agachado da passagem baixa, levanta e olha em volta. Ao voltar dela para o salão, sai engatinhando da laje, levanta, vira e dá uns passos. No Mundo Exterior, depois de acordar, dá os primeiros passos na grama.
+
 ## v3.1.1 · 11/11/2026
 
 - **Correção:** ao voltar da subida (Cenário III) para o salão das estátuas, Code e a pedra apareciam no alto da tela. A câmera vertical da subida não era zerada na volta; agora é, e Code aparece no chão, ao lado da passagem.

@@ -98,7 +98,8 @@ const VINE = ['#263a1a', '#3c5a22', '#6a8a30'];
 const HP = { skin:'#f1c59c', skinSh:'#d39a6e', skinHi:'#fbdcb8', hair:'#7b4a2c', hairSh:'#573019', hairHi:'#a06a3e',
   tunic:'#d8c5a4', tunicSh:'#b59f7e', tunicDk:'#8f7a5c', tunicHi:'#ebdcc0', belt:'#6b4027', beltHi:'#8e5c38',
   pants:'#cbb894', pantsSh:'#a38c6b', boot:'#74462a', bootSh:'#4e2c18', bootHi:'#93603c',
-  out:'#150c0e', eye:'#1a1014', eyeW:'#fffaf0', lid:'#8a5236', mouth:'#8a2e24', iron:'#5a5f6c', ironHi:'#a3aab6', burn:'#e0502e' };
+  out:'#150c0e', eye:'#1a1014', eyeW:'#fffaf0', lid:'#8a5236', mouth:'#8a2e24', iron:'#5a5f6c', ironHi:'#a3aab6', burn:'#e0502e',
+  burnSk:'#c4483a', burnHi:'#f08a6c', burnDk:'#4a1a14' };   // mão queimada: carne viva, bolha e casca escura
 const NPCP = {
   mistico:   { skin:'#c98e62', skinSh:'#9c6843', skinHi:'#e0aa7c', hair:'#aaa5a0', hairSh:'#76716e', hairHi:'#d8d4ce', tunic:'#d8c5a4' },
   arrogante: { skin:'#e3b189', skinSh:'#b98560', skinHi:'#f4cca6', hair:'#4a2c1c', hairSh:'#2c180e', hairHi:'#6e4830', tunic:'#d8c5a4' },
@@ -306,29 +307,43 @@ function sLeg(r, f, lift, front, tuck) {
   r(hx + f, -4 - lift, 3, 2, bc); r(hx + f, -2 - lift, 4, 2, bc);
   if (front) r(hx + f, -4 - lift, 1, 2, HP.bootHi);
 }
+// Mão queimada: depois do segundo toque no fogo, a mão da frente fica em carne viva até o fim do ciclo.
+// BURNED só fica ligado enquanto o conjunto de sprites "queimado" é gerado (S.burned).
+let BURNED = false;
+function hand(r, x, y, w, h, front) {
+  if (!(front && BURNED)) { r(x, y, w, h, front ? HP.skin : HP.skinSh); return; }
+  r(x, y, w, h, HP.burnSk); r(x + (w > 2 ? 1 : 0), y, 1, 1, HP.burnHi); r(x + w - 1, y + h - 1, 1, 1, HP.burnDk);
+}
 function sArm(r, mode, s, t, L, front, o) {
-  const sc = front ? HP.tunicHi : HP.tunicSh, hc = front ? HP.skin : HP.skinSh, y = -16 + t;
+  const sc = front ? HP.tunicHi : HP.tunicSh, y = -16 + t, hd = (x, yy, w, h) => hand(r, x, yy, w, h, front);
   if (mode === 'down') {
     const x = front ? L - 1 : L + 1, dx = front ? s : -s, mx = x + Math.round(dx / 2);
     r(mx, y, 3, 3, sc); r(x + dx, y + 3, 3, 3, sc);
     if (front) { r(mx - 1, y + 1, 1, 2, HP.tunicSh); r(x + dx - 1, y + 3, 1, 3, HP.tunicSh); }
-    r(x + dx, y + 6, 3, 2, hc); if (o.cuffs !== false) r(x + dx, y + 5, 3, 1, HP.iron);
+    hd(x + dx, y + 6, 3, 2); if (o.cuffs !== false) r(x + dx, y + 5, 3, 1, HP.iron);
   } else if (mode === 'out') {
-    if (front) { r(L + 2, y, 7, 3, sc); r(L + 2, y + 2, 7, 1, HP.tunicSh); r(L + 9, y, 2, 3, hc); } else { r(L - 11, y, 7, 3, sc); r(L - 13, y, 2, 3, hc); }
+    if (front) { r(L + 2, y, 7, 3, sc); r(L + 2, y + 2, 7, 1, HP.tunicSh); hd(L + 9, y, 2, 3); } else { r(L - 11, y, 7, 3, sc); hd(L - 13, y, 2, 3); }
   } else if (mode === 'up') {
-    if (front) { r(L + 3, y - 1, 3, 3, sc); r(L + 5, y - 6, 3, 6, sc); r(L + 5, y - 8, 3, 2, hc); }
-    else { r(L - 7, y - 1, 3, 3, sc); r(L - 9, y - 6, 3, 6, sc); r(L - 9, y - 8, 3, 2, hc); }
-  } else if (mode === 'wall') { r(L + 1, y, 5, 3, sc); r(L + 5, y - 4, 3, 5, sc); r(L + 6, y - 6, 3, 2, hc); }
-  else if (mode === 'eyes') { r(L, y, 3, 3, sc); r(L + 2, y - 4, 3, 5, sc); r(L + 1, y - 8, 6, 4, sc); r(L + 1, y - 5, 6, 1, HP.tunicSh); r(L + 6, y - 8, 2, 3, hc); }
-  else if (mode === 'clutch') { r(L - 1, y, 3, 4, sc); r(L, y + 3, 5, 3, sc); r(L + 5, y + 2, 3, 4, o.burn ? HP.burn : hc); }
-  else if (mode === 'point') { r(L, y, 3, 3, sc); r(L + 2, y + 1, 7, 3, sc); r(L + 9, y + 1, 2, 3, hc); }
+    if (front) { r(L + 3, y - 1, 3, 3, sc); r(L + 5, y - 6, 3, 6, sc); hd(L + 5, y - 8, 3, 2); }
+    else { r(L - 7, y - 1, 3, 3, sc); r(L - 9, y - 6, 3, 6, sc); hd(L - 9, y - 8, 3, 2); }
+  } else if (mode === 'wall') { r(L + 1, y, 5, 3, sc); r(L + 5, y - 4, 3, 5, sc); hd(L + 6, y - 6, 3, 2); }
+  else if (mode === 'eyes') { r(L, y, 3, 3, sc); r(L + 2, y - 4, 3, 5, sc); r(L + 1, y - 8, 6, 4, sc); r(L + 1, y - 5, 6, 1, HP.tunicSh); hd(L + 6, y - 8, 2, 3); }
+  else if (mode === 'clutch') { r(L - 1, y, 3, 4, sc); r(L, y + 3, 5, 3, sc); r(L + 5, y + 2, 3, 4, o.burn ? HP.burn : front ? HP.skin : HP.skinSh); }
+  else if (mode === 'point') { r(L, y, 3, 3, sc); r(L + 2, y + 1, 7, 3, sc); hd(L + 9, y + 1, 2, 3); }
+  else if (mode === 'carry') { r(L - 1, y, 3, 4, sc); r(L + 1, y + 3, 5, 2, sc); r(L + 1, y + 4, 4, 1, HP.tunicSh); hd(L + 5, y + 2, 2, 3); }   // segurando a lanterna à frente
+  else if (mode === 'knee') { r(L + 1, y, 3, 3, sc); r(L + 3, y + 2, 3, 2, sc); hd(L + 6, y + 3, 2, 2); }   // agachado: antebraço apoiado no joelho
 }
 // Vista lateral (olhando para a direita)
 function sidePose(o = {}) {
   return heroCanvas(r => {
-    const b = (o.bob || 0) + (o.kneel ? 5 : 0), L = o.lean || 0, br = o.breath ? 1 : 0, t = b + br;
+    const b = (o.bob || 0) + (o.kneel ? 5 : 0) + (o.crouch ? 6 : 0), L = o.lean || 0, br = o.breath ? 1 : 0, t = b + br;
     sArm(r, o.armB || 'down', o.swB || 0, t, L, false, o);
     if (o.kneel) { r(-6, -4, 6, 3, HP.pantsSh); r(-9, -3, 4, 3, HP.bootSh); r(-1, -6, 6, 3, HP.pants); r(3, -4, 3, 2, HP.pants); r(3, -2, 4, 2, HP.boot); }
+    else if (o.crouch) {   // agachado: pés no chão, joelho da frente para cima, quadril quase nos calcanhares
+      const s = o.cs || 0;
+      r(-7 + s, -2, 4, 2, HP.bootSh); r(-6 + s, -4, 3, 2, HP.pantsSh);
+      r(3 - s, -5, 4, 3, HP.pants); r(6 - s, -5, 1, 2, HP.pantsSh); r(2 - s, -2, 4, 2, HP.boot); r(2 - s, -2, 1, 2, HP.bootHi);
+    }
     else { sLeg(r, o.fB || 0, o.lB || 0, false, o.tuck); sLeg(r, o.fF || 0, o.lF || 0, true, o.tuck); }
     // saia da túnica, faixa com a ponta solta e peito
     r(L - 5, -9 + b, 10, 2, HP.tunic); r(L - 5, -9 + b, 2, 2, HP.tunicSh); r(L - 4, -8 + b, 8, 1, HP.tunicSh);
@@ -509,30 +524,48 @@ function cloudArt(R, w, hMax, C) {
 }
 
 const S = {};
-function buildSprites() {
-  const sp = sidePose;
-  S.idle = [sp({}), sp({ breath: 1 })];
-  S.idleBlink = [sp({ eyes: 'closed' }), sp({ breath: 1, eyes: 'closed' })];
+// Todas as poses de perfil do Code. Geradas duas vezes: a normal (S) e a da mão queimada (S.burned).
+function heroSet() {
+  const sp = sidePose, o = {};
+  o.idle = [sp({}), sp({ breath: 1 })];
+  o.idleBlink = [sp({ eyes: 'closed' }), sp({ breath: 1, eyes: 'closed' })];
   // ciclo de caminhada em 6 quadros: contato, peso, passagem (para cada perna)
   const LEGS = [{ fF: 3, fB: -3, s: -2 }, { fF: 2, fB: -2, lB: 1, bob: 1, s: -1 }, { fF: 0, fB: 0, lB: 2, s: 0 }, { fF: -3, fB: 3, s: 2 }, { fF: -2, fB: 2, lF: 1, bob: 1, s: 1 }, { fF: 0, fB: 0, lF: 2, s: 0 }];
   const walkSet = ex => LEGS.map(l => sp({ ...l, swF: l.s, swB: l.s, ...ex }));
-  S.walk = walkSet({});
-  S.wall = walkSet({ armF: 'wall' }); S.wallIdle = sp({ armF: 'wall', breath: 1 });
-  S.coverWalk = walkSet({ armF: 'eyes', eyes: 'closed' }); S.coverIdle = sp({ armF: 'eyes', eyes: 'closed' });
-  S.wob = [sp({ lean: -1, armF: 'out', armB: 'out', fF: 2, fB: -3, eyes: 'wide' }), sp({ lean: 1, armF: 'out', armB: 'out', fF: -3, fB: 2, eyes: 'wide', mouth: 'open' })];
-  S.jump = [sp({ tuck: 1, armF: 'up', armB: 'up' }), sp({ fF: 2, fB: -2, lF: 2, lB: 1, armF: 'out', armB: 'out' })];
-  S.fall = [sp({ fF: 2, fB: -3, lB: 1, armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 }), sp({ fF: 3, fB: -2, lF: 1, armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 })];
-  S.shock = [sp({ armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open' }), sp({ armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', breath: 1 })];
-  S.awe = sp({ eyes: 'wide', mouth: 'open' });
-  S.kneel = sp({ kneel: 1, eyes: 'squint' });
+  o.walk = walkSet({});
+  o.wall = walkSet({ armF: 'wall' }); o.wallIdle = sp({ armF: 'wall', breath: 1 });
+  o.coverWalk = walkSet({ armF: 'eyes', eyes: 'closed' }); o.coverIdle = sp({ armF: 'eyes', eyes: 'closed' });
+  o.wob = [sp({ lean: -1, armF: 'out', armB: 'out', fF: 2, fB: -3, eyes: 'wide' }), sp({ lean: 1, armF: 'out', armB: 'out', fF: -3, fB: 2, eyes: 'wide', mouth: 'open' })];
+  o.jump = [sp({ tuck: 1, armF: 'up', armB: 'up' }), sp({ fF: 2, fB: -2, lF: 2, lB: 1, armF: 'out', armB: 'out' })];
+  o.fall = [sp({ fF: 2, fB: -3, lB: 1, armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 }), sp({ fF: 3, fB: -2, lF: 1, armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 })];
+  o.shock = [sp({ armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open' }), sp({ armF: 'up', armB: 'up', eyes: 'wide', mouth: 'open', breath: 1 })];
+  o.awe = sp({ eyes: 'wide', mouth: 'open' });
+  o.kneel = sp({ kneel: 1, eyes: 'squint' });
+  // agachado: parado (respirando) e andando em 4 quadros curtos
+  o.crouch = [sp({ crouch: 1, armF: 'knee', hx: 1, hy: 1 }), sp({ crouch: 1, armF: 'knee', hx: 1, hy: 1, breath: 1 })];
+  o.crouchWalk = [{ cs: -1 }, { cs: 0, bob: 1 }, { cs: 1 }, { cs: 0, bob: 1 }].map(f => sp({ crouch: 1, armF: 'knee', hx: 1, hy: 1, ...f }));
   // escalada pelos cipós: braços alternando no alto, pernas buscando apoio
-  S.climb = [sp({ armF: 'up', armB: 'wall', fF: 1, lF: 2, fB: -1 }), sp({ armF: 'up', armB: 'wall', fF: 1, lF: 1, fB: -1, bob: 1 }), sp({ armF: 'wall', armB: 'up', fF: 0, fB: 0, lB: 2 }), sp({ armF: 'wall', armB: 'up', fF: 0, fB: 0, lB: 1, bob: 1 })];
-  S.reach = sp({ armF: 'point' });
-  S.hurt = [sp({ armF: 'clutch', armB: 'out', eyes: 'hurt', mouth: 'grit', lean: -1, burn: 1 }), sp({ armF: 'clutch', armB: 'out', eyes: 'hurt', mouth: 'open', burn: 1, bob: 1 })];
-  S.lie = lying(false); S.lieOpen = lying(true);
+  o.climb = [sp({ armF: 'up', armB: 'wall', fF: 1, lF: 2, fB: -1 }), sp({ armF: 'up', armB: 'wall', fF: 1, lF: 1, fB: -1, bob: 1 }), sp({ armF: 'wall', armB: 'up', fF: 0, fB: 0, lB: 2 }), sp({ armF: 'wall', armB: 'up', fF: 0, fB: 0, lB: 1, bob: 1 })];
+  o.reach = sp({ armF: 'point' });
+  // carregando a lanterna da subida: o braço da frente fica dobrado, segurando a alça
+  const cw = LEGS.map(l => sp({ ...l, swB: l.s, armF: 'carry' }));
+  o.carry = {
+    idle: [sp({ armF: 'carry' }), sp({ armF: 'carry', breath: 1 })], walk: cw,
+    jump: [sp({ tuck: 1, armF: 'carry', armB: 'up' }), sp({ fF: 2, fB: -2, lF: 2, lB: 1, armF: 'carry', armB: 'out' })],
+    fall: [sp({ fF: 2, fB: -3, lB: 1, armF: 'carry', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 }), sp({ fF: 3, fB: -2, lF: 1, armF: 'carry', armB: 'up', eyes: 'wide', mouth: 'open', hy: -1 })],
+    crouch: [sp({ crouch: 1, armF: 'carry', hx: 1, hy: 1 }), sp({ crouch: 1, armF: 'carry', hx: 1, hy: 1, breath: 1 })],
+    crouchWalk: [{ cs: -1 }, { cs: 0, bob: 1 }, { cs: 1 }, { cs: 0, bob: 1 }].map(f => sp({ crouch: 1, armF: 'carry', hx: 1, hy: 1, ...f })),
+  };
+  o.hurt = [sp({ armF: 'clutch', armB: 'out', eyes: 'hurt', mouth: 'grit', lean: -1, burn: 1 }), sp({ armF: 'clutch', armB: 'out', eyes: 'hurt', mouth: 'open', burn: 1, bob: 1 })];
   // desmaio: cambaleia para trás, cai de joelhos, tomba
-  S.faint = [sp({ lean: -1, eyes: 'closed', armF: 'out', armB: 'out', fF: 1, fB: -2, bob: 1 }), sp({ lean: -1, eyes: 'closed', armF: 'out', armB: 'out', fF: 2, fB: -2, bob: 2, hx: -1, hy: 1 }),
+  o.faint = [sp({ lean: -1, eyes: 'closed', armF: 'out', armB: 'out', fF: 1, fB: -2, bob: 1 }), sp({ lean: -1, eyes: 'closed', armF: 'out', armB: 'out', fF: 2, fB: -2, bob: 2, hx: -1, hy: 1 }),
     sp({ kneel: 1, eyes: 'closed' }), sp({ kneel: 1, eyes: 'closed', bob: 2, hx: 2, hy: 3 }), S.lie];
+  return o;
+}
+function buildSprites() {
+  S.lie = lying(false); S.lieOpen = lying(true);
+  Object.assign(S, heroSet());
+  BURNED = true; S.burned = heroSet(); BURNED = false;
   S.sit = {};
   for (const a of ['down', 'reach', 'hold', 'up', 'strike']) S.sit[a] = backSit({ arm: a });
   S.sitFree = backSit({ arm: 'down', broken: 1 });
