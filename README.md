@@ -3,9 +3,9 @@
 Jogo 2D em pixel art baseado na **Alegoria da Caverna** de Platão (*A República*, Livro VII).
 Feito em HTML5 Canvas puro, num único arquivo, sem imagens nem sons externos: toda a arte é desenhada em código e toda a trilha é sintetizada com a Web Audio API.
 
-> **Repositório privado.** Serve de backup e organização do projeto até a primeira versão pública.
+> **Versão final de lançamento: v3.2.0.** O `index.html` da raiz é o jogo lançado. As versões anteriores continuam disponíveis em [`versoes/`](versoes/). O repositório segue privado.
 
-Versão atual: **v3.2.0** · veja o [CHANGELOG](CHANGELOG.md).
+Versão final: **v3.2.0** (lançamento) · veja o [CHANGELOG](CHANGELOG.md) e as [versões anteriores](versoes/).
 
 ---
 
@@ -51,7 +51,8 @@ Para voltar à fase anterior, encoste na borda esquerda e segure `←` (não val
 ## Estrutura do repositório
 
 ```
-index.html                 o jogo completo (arquivo único gerado a partir de src/)
+index.html                 o jogo lançado, v3.2.0 (arquivo único gerado a partir de src/)
+versoes/                   cada versão publicada, jogável: versoes/vX.Y.Z/index.html
 build.sh                   junta src/ em index.html
 src/
   01-interface.html        HTML e CSS: tela inicial, HUD, diálogo, QTE, toque

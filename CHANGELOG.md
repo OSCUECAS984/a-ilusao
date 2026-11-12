@@ -1,6 +1,8 @@
 # Histórico de versões
 
-## v3.2.0 · 11/11/2026
+## v3.2.0 · 11/11/2026 · versão final de lançamento
+
+Versão de lançamento do jogo, a mesma do `index.html` da raiz. Todas as versões jogáveis estão em [versoes/](versoes/).
 
 - **Mão queimada (Cenário II):** no segundo toque na fogueira, a mão de Code fica queimada (vermelha e com bolhas) até o fim do ciclo, em todas as poses, e solta um fio de fumaça por alguns segundos. A partir daí ele se recusa a tocar no fogo de novo, e o ponto passa a se chamar "Examinar".
 - **Agachar:** segure `↓` (ou `S`) no chão para agachar. Agachado, Code fica mais baixo, anda devagar e não pula; sob um teto baixo ele continua agachado mesmo soltando a tecla. Botão ▼ nos controles de toque.
