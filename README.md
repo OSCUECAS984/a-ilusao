@@ -3,7 +3,10 @@
 Jogo 2D em pixel art baseado na **Alegoria da Caverna** de Platão (*A República*, Livro VII).
 Feito em HTML5 Canvas puro, num único arquivo, sem imagens nem sons externos: toda a arte é desenhada em código e toda a trilha é sintetizada com a Web Audio API.
 
-> **Versão final de lançamento: v3.2.0.** O `index.html` da raiz é o jogo lançado. As versões anteriores continuam disponíveis em [`versoes/`](versoes/). O repositório segue privado.
+> **Versão final de lançamento: v3.2.0.** O `index.html` da raiz é o jogo lançado. As versões anteriores continuam disponíveis em [`versoes/`](versoes/).
+
+**▶ Jogue no navegador:** https://oscuecas984.github.io/a-ilusao/ (GitHub Pages)  
+Versões anteriores online: `https://oscuecas984.github.io/a-ilusao/versoes/vX.Y.Z/`
 
 Versão final: **v3.2.0** (lançamento) · veja o [CHANGELOG](CHANGELOG.md) e as [versões anteriores](versoes/).
 
